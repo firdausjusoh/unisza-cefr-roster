@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniSZA English Course Roster Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6" x-data="rosterApp()">
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm">
+        
+        <!-- Header & Level Toggle -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster Automation</h1>
+                <p class="text-sm text-gray-500">Automated student allocation for Degree and Diploma English courses.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex bg-gray-200 p-1 rounded-xl">
+                <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree Roster</button>
+                <button @click="switchLevel('diploma')" :class="level === 'diploma' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Diploma Roster</button>
+            </div>
+        </div>
+
+        <!-- Filters Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Course</label>
+                <select x-model="selectedCourse" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Courses (<span x-text="level.toUpperCase()"></span>)</option>
+                    <template x-for="course in availableCourses">
+                        <option :value="course" x-text="course"></option>
+                    </template>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Faculty</label>
+                <select x-model="selectedFaculty" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Faculties</option>
+                    <template x-for="fac in faculties">
+                        <option :value="fac" x-text="fac"></option>
+                    </template>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Program</label>
+                <select x-model="selectedProgram" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Programs</option>
+                    <template x-for="prog in programs">
+                        <option :value="prog" x-text="prog"></option>
+                    </template>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Search Student</label>
+                <input type="text" x-model="searchQuery" placeholder="Name or Matrix No..." class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <!-- Meta Bar / Stats & Export -->
+        <div class="flex justify-between items-center mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-900">
+            <div>
+                Showing <span class="font-bold" x-text="filteredStudents.length"></span> students out of <span x-text="students.length"></span> total records.
+            </div>
+            <button @click="exportCSV" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow transition">
+                Export Filtered List (CSV)
+            </button>
+        </div>
+
+        <!-- Data Table -->
+        <div class="overflow-x-auto border rounded-xl">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Matrix No</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Program / Faculty</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase" x-text="level === 'degree' ? 'MUET' : 'CEFRSAH'"></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Assigned Course</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    <template x-for="student in filteredStudents" :key="student.NOPEL">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-500" x-text="student.RN"></td>
+                            <td class="px-4 py-3 text-sm font-mono text-gray-700" x-text="student.NOPEL"></td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="student.NAMAPEL"></td>
+                            <td class="px-4 py-3 text-sm text-gray-500">
+                                <div class="font-medium text-gray-800" x-text="student.PROGRAM"></div>
+                                <div class="text-xs text-gray-400" x-text="student.FAKULTI"></div>
+                            </td>
+                            <td class="px-4 py-3 text-sm font-bold text-gray-700" x-text="level === 'degree' ? student.MUET : student.CEFRSAH"></td>
+                            <td class="px-4 py-3 text-sm font-semibold text-blue-600" x-text="student.assignedCourse"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function rosterApp() {
+            return {
+                level: 'degree',
+                students: [],
+                selectedCourse: '',
+                selectedFaculty: '',
+                selectedProgram: '',
+                searchQuery: '',
+                
+                init() {
+                    this.loadData();
+                },
+
+                switchLevel(lvl) {
+                    this.level = lvl;
+                    this.selectedCourse = '';
+                    this.selectedFaculty = '';
+                    this.selectedProgram = '';
+                    this.searchQuery = '';
+                    this.loadData();
+                },
+
+                loadData() {
+                    let filename = this.level === 'degree' ? 'data-degree.xlsx' : 'data-diploma.xlsx';
+                    
+                    fetch(filename)
+                        .then(res => res.arrayBuffer())
+                        .then(buf => {
+                            let workbook = XLSX.read(buf, {type: 'array'});
+                            let sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            let json = XLSX.utils.sheet_to_json(sheet);
+                            
+                            this.students = json.map(s => {
+                                let course = 'Unassigned';
+                                if (this.level === 'degree') {
+                                    let m = parseFloat(s.MUET);
+                                    if (m >= 2.0 && m <= 2.5) course = 'PDC12202';
+                                    else if (m >= 3.0 && m <= 3.5) course = 'PDC12302';
+                                    else if (m >= 4.0 && m <= 5.5) course = 'PDC12402';
+                                } else {
+                                    let c = String(s.CEFRSAH || '').trim().toUpperCase();
+                                    if (c === 'A2') course = 'PBC11802';
+                                    else if (c === 'B1') course = 'PBC11902';
+                                    else if (c === 'B2' || c === 'C1') course = 'PBC12002';
+                                }
+                                return { ...s, assignedCourse: course };
+                            });
+                        });
+                },
+
+                get availableCourses() {
+                    return this.level === 'degree' 
+                        ? ['PDC12202', 'PDC12302', 'PDC12402'] 
+                        : ['PBC11802', 'PBC11902', 'PBC12002'];
+                },
+
+                get faculties() {
+                    return [...new Set(this.students.map(s => s.FAKULTI))].filter(Boolean).sort();
+                },
+
+                get programs() {
+                    let list = this.selectedFaculty 
+                        ? this.students.filter(s => s.FAKULTI === this.selectedFaculty)
+                        : this.students;
+                    return [...new Set(list.map(s => s.PROGRAM))].filter(Boolean).sort();
+                },
+
+                get filteredStudents() {
+                    return this.students.filter(s => {
+                        let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
+                        let matchFaculty = !this.selectedFaculty || s.FAKULTI === this.selectedFaculty;
+                        let matchProgram = !this.selectedProgram || s.PROGRAM === this.selectedProgram;
+                        let matchSearch = !this.searchQuery || 
+                            s.NAMAPEL.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                            String(s.NOPEL).includes(this.searchQuery);
+                        return matchCourse && matchFaculty && matchProgram && matchSearch;
+                    });
+                },
+
+                exportCSV() {
+                    let headers = ["No", "Matrix No", "Student Name", "Program", "Faculty", this.level === 'degree' ? "MUET" : "CEFRSAH", "Assigned Course"];
+                    let rows = this.filteredStudents.map(s => [
+                        s.RN, s.NOPEL, `"${s.NAMAPEL}"`, `"${s.PROGRAM}"`, `"${s.FAKULTI}"`, 
+                        this.level === 'degree' ? s.MUET : s.CEFRSAH, s.assignedCourse
+                    ]);
+                    
+                    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `UniSZA_${this.level.toUpperCase()}_Roster.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
