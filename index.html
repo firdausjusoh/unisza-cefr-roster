@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UniSZA English Course Roster Dashboard</title>
+    <title>UniSZA English Course Roster & Timetable Automation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -14,7 +14,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
-                <p class="text-sm text-gray-500">Automated student allocation and combined section group matching for Degree and Diploma.</p>
+                <p class="text-sm text-gray-500">Automated student allocation and individual group export for Degree and Diploma.</p>
             </div>
             <div class="mt-4 md:mt-0 flex bg-gray-200 p-1 rounded-xl">
                 <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree (MUET)</button>
@@ -57,14 +57,25 @@
             </div>
         </div>
 
-        <!-- Meta Bar / Stats & Export -->
-        <div class="flex justify-between items-center mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-900">
+        <!-- Meta Bar / Stats & Individual Group Exports -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-900 gap-3">
             <div>
                 Showing <span class="font-bold" x-text="filteredStudents.length"></span> students out of <span x-text="students.length"></span> total records.
             </div>
-            <button @click="exportCSV" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow transition">
-                Export Filtered List (CSV)
-            </button>
+            <div class="flex flex-wrap gap-2">
+                <template x-if="selectedLecturer && selectedCourse">
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-xs font-semibold text-blue-800">Export Separate Groups:</span>
+                        <template x-for="(groups, secId) in timetableData[selectedLecturer][selectedCourse]" :key="secId">
+                            <button @click="exportGroupCSV(secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Section ${secId} (${groups.join(', ')})`">
+                            </button>
+                        </template>
+                    </div>
+                </template>
+                <button @click="exportCSV" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow transition">
+                    Export Current View (CSV)
+                </button>
+            </div>
         </div>
 
         <!-- Data Table -->
@@ -100,7 +111,6 @@
     </div>
 
     <script>
-        // Verified Program Code Mappings
         const programMap = {
             "BEN": "SARJANA MUDA BAHASA INGGERIS DENGAN KOMUNIKASI (KEPUJIAN)",
             "SMBIOMED": "SARJANA MUDA SAINS BIOPERUBATAN DENGAN KEPUJIAN",
@@ -195,7 +205,7 @@
                         this.timetableData = await res.json();
                         this.lecturers = Object.keys(this.timetableData).sort();
                     } catch(e) {
-                        console.error("Timetable mapping JSON not found yet.", e);
+                        console.error("Timetable mapping JSON not found.", e);
                     }
                 },
 
@@ -240,7 +250,7 @@
                     if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
                         let courses = Object.keys(this.timetableData[this.selectedLecturer]);
                         if (courses.length > 0) {
-                            this.selectedCourse = courses[0]; // Auto-select first course
+                            this.selectedCourse = courses[0];
                         }
                     }
                 },
@@ -255,12 +265,10 @@
                 },
 
                 get programs() {
-                    let list = this.students;
-                    return [...new Set(list.map(s => s.PROGRAM))].filter(Boolean).sort();
+                    return [...new Set(this.students.map(s => s.PROGRAM))].filter(Boolean).sort();
                 },
 
                 get filteredStudents() {
-                    // Collect allowed programs from selected lecturer's combined timetable groups if lecturer is selected
                     let allowedFullPrograms = null;
                     if (this.selectedLecturer && this.selectedCourse && this.timetableData[this.selectedLecturer]?.[this.selectedCourse]) {
                         allowedFullPrograms = new Set();
@@ -268,7 +276,6 @@
                         for (let secId in sections) {
                             let groups = sections[secId];
                             groups.forEach(g => {
-                                // Extract prefix before numbers (e.g., "BEN1A" -> "BEN")
                                 let match = g.match(/^([A-Z]+)\d+/);
                                 if (match) {
                                     let code = match[1];
@@ -284,7 +291,6 @@
                         let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
                         let matchProgram = !this.selectedProgram || s.PROGRAM === this.selectedProgram;
                         
-                        // If lecturer is selected, check if student's program matches any combined group program for that lecturer/course
                         let matchLecturerGroups = true;
                         if (allowedFullPrograms !== null) {
                             let studentProg = String(s.PROGRAM || '').trim();
@@ -297,6 +303,39 @@
                             
                         return matchCourse && matchProgram && matchLecturerGroups && matchSearch;
                     });
+                },
+
+                exportGroupCSV(secId, groupCodes) {
+                    // Filter students specifically belonging to this section's groups
+                    let groupPrograms = new Set();
+                    groupCodes.forEach(g => {
+                        let match = g.match(/^([A-Z]+)\d+/);
+                        if (match && programMap[match[1]]) {
+                            groupPrograms.add(programMap[match[1]]);
+                        }
+                    });
+
+                    let groupStudents = this.students.filter(s => {
+                        let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
+                        let studentProg = String(s.PROGRAM || '').trim();
+                        let matchProg = Array.from(groupPrograms).some(p => studentProg.includes(p));
+                        return matchCourse && matchProg;
+                    });
+
+                    let headers = ["No", "Matrix No", "Student Name", "Program", "Faculty", this.level === 'degree' ? "MUET" : "CEFRSAH", "Assigned Course"];
+                    let rows = groupStudents.map(s => [
+                        s.RN, s.NOPEL, `"${s.NAMAPEL}"`, `"${s.PROGRAM}"`, `"${s.FAKULTI}"`, 
+                        this.level === 'degree' ? s.MUET : s.CEFRSAH, s.assignedCourse
+                    ]);
+                    
+                    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `${this.selectedLecturer}_Sec${secId}_(${groupCodes.join('_')}).csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 },
 
                 exportCSV() {
