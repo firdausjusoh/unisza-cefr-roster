@@ -14,7 +14,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
-                <p class="text-sm text-gray-500">Automated student allocation, individual group export, and interactive workload search.</p>
+                <p class="text-sm text-gray-500">Automated student allocation, official attendance sheet export, and interactive workload search.</p>
             </div>
             <div class="flex items-center gap-3">
                 <button @click="openSummaryModal = true" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow transition flex items-center gap-2">
@@ -71,9 +71,9 @@
             <div class="flex flex-wrap gap-2">
                 <template x-if="selectedLecturer && selectedCourse">
                     <div class="flex flex-wrap gap-2 items-center">
-                        <span class="text-xs font-semibold text-blue-800">Export Separate Groups:</span>
+                        <span class="text-xs font-semibold text-blue-800">Export Attendance Sheet:</span>
                         <template x-for="(groups, secId) in timetableData[selectedLecturer][selectedCourse]" :key="secId">
-                            <button @click="exportGroupCSV(selectedLecturer, selectedCourse, secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
+                            <button @click="exportAttendanceExcel(selectedLecturer, selectedCourse, secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
                             </button>
                         </template>
                     </div>
@@ -157,9 +157,9 @@
                                                                 <span class="text-xs font-semibold text-gray-500 mr-2" x-text="`Sec ${secId}:`"></span>
                                                                 <span class="font-bold text-gray-800 text-sm" x-text="info.groups.join(', ')"></span>
                                                             </div>
-                                                            <button @click="exportGroupCSV(lectName, courseCode, secId, info.groups)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer" title="Click to download student list">
+                                                            <button @click="exportAttendanceExcel(lectName, courseCode, secId, info.groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer" title="Download official attendance sheet">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                                                <span x-text="`${info.studentCount} Students (Download)`"></span>
+                                                                <span x-text="`${info.studentCount} Students (Attendance Form)`"></span>
                                                             </button>
                                                         </div>
                                                     </template>
@@ -172,7 +172,7 @@
                         </div>
                     </template>
 
-                    <!-- MODE 2: SEARCH BY GROUP (Using Table Grid Data) -->
+                    <!-- MODE 2: SEARCH BY GROUP -->
                     <template x-if="summaryMode === 'group'">
                         <div class="space-y-3">
                             <template x-for="item in filteredTableGroupSummary" :key="item.groupName + item.courseCode">
@@ -188,9 +188,9 @@
                                             <span class="font-semibold text-blue-700" x-text="item.teacher"></span>
                                         </div>
                                     </div>
-                                    <button @click="exportGroupCSV(item.teacher, item.courseCode, item.secId, [item.groupName])" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                                    <button @click="exportAttendanceExcel(item.teacher, item.courseCode, item.secId, [item.groupName])" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        <span x-text="`${item.studentCount} Students (Download)`"></span>
+                                        <span x-text="`${item.studentCount} Students (Attendance Form)`"></span>
                                     </button>
                                 </div>
                             </template>
@@ -501,7 +501,7 @@
                     });
                 },
 
-                exportGroupCSV(lectName, courseCode, secId, groupCodes) {
+                async exportAttendanceExcel(lectName, courseCode, secId, groupCodes) {
                     let groupPrograms = new Set();
                     groupCodes.forEach(g => {
                         let match = g.match(/^([A-Z]+)\d+/);
@@ -517,20 +517,48 @@
                         return matchCourse && matchProg;
                     });
 
-                    let headers = ["No", "Matrix No", "Student Name", "Program", "Faculty", this.level === 'degree' ? "MUET" : "CEFRSAH", "Assigned Course"];
-                    let rows = groupStudents.map(s => [
-                        s.RN, s.NOPEL, `"${s.NAMAPEL}"`, `"${s.PROGRAM}"`, `"${s.FAKULTI}"`, 
-                        this.level === 'degree' ? s.MUET : s.CEFRSAH, s.assignedCourse
-                    ]);
-                    
-                    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-                    let encodedUri = encodeURI(csvContent);
-                    let link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `${lectName}_${courseCode}_Sec${secId}_(${groupCodes.join('_')}).csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    // Build formal UniSZA Attendance Form structure using SheetJS
+                    let ws_data = [
+                        ["KEHADIRAN KELAS PENGAJARAN", "", "", "", "", "", ""],
+                        ["(UniSZA-PT01-PK01-BR002-S01)", "", "", "", "", "", ""],
+                        ["", "", "", "", "", "", ""],
+                        ["SEMESTER :", "Semester I 2026/2027", "", "", "MINGGU", "", ""],
+                        ["KOD KURSUS:", courseCode, "", "", "MASA", "", ""],
+                        ["SESI AKADEMIK :", "2026/2027", "", "", "", "", ""],
+                        ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", "", "", "", ""],
+                        ["JABATAN/PROGRAM:", groupCodes.join(", "), "", "", "", "", ""],
+                        ["", "", "", "", "", "", ""],
+                        ["BIL.", "NO. MATRIK", "NAMA", "TARIKH", "TANDATANGAN", "", ""]
+                    ];
+
+                    groupStudents.forEach((s, index) => {
+                        ws_data.push([index + 1, String(s.NOPEL), s.NAMAPEL, "", "", "", ""]);
+                    });
+
+                    // Add footer sign-off rows
+                    ws_data.push([]);
+                    ws_data.push(["(UNTUK TINDAKAN PENSYARAH - PERAKU PELAKSANAAN KELAS DAN SIMPAN BORANG DALAM FAIL KURSUS)", "", "", "", "", "", ""]);
+                    ws_data.push(["DIPERAKUKAN KELAS PENGAJARAN DI ATAS TELAH DILAKSANAKAN", "", "", "", "", "", ""]);
+                    ws_data.push(["TANDATANGAN", ":", "", "", "", "", ""]);
+                    ws_data.push(["NAMA/COP RASMI", ": " + lectName, "", "", "", "", ""]);
+                    ws_data.push(["TARIKH", ":", "", "", "", "", ""]);
+
+                    let wb = XLSX.utils.book_new();
+                    let ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+                    // Column widths
+                    ws['!cols'] = [
+                        {wch: 6},  // BIL
+                        {wch: 15}, // NO MATRIK
+                        {wch: 40}, // NAMA
+                        {wch: 12}, // TARIKH
+                        {wch: 20}, // TANDATANGAN
+                        {wch: 10},
+                        {wch: 10}
+                    ];
+
+                    XLSX.utils.book_append_sheet(wb, ws, "Kehadiran");
+                    XLSX.writeFile(wb, `${lectName}_${courseCode}_Sec${secId}_Attendance.xlsx`);
                 },
 
                 exportCSV() {
