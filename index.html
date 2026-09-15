@@ -14,12 +14,12 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
-                <p class="text-sm text-gray-500">Automated student allocation, individual group export, and teacher workload tracking.</p>
+                <p class="text-sm text-gray-500">Automated student allocation, individual group export, and interactive workload search.</p>
             </div>
             <div class="flex items-center gap-3">
                 <button @click="openSummaryModal = true" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    Teacher Workload & Assignments Summary
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    Interactive Workload & Search Summary
                 </button>
                 <div class="flex bg-gray-200 p-1 rounded-xl">
                     <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree</button>
@@ -73,7 +73,7 @@
                     <div class="flex flex-wrap gap-2 items-center">
                         <span class="text-xs font-semibold text-blue-800">Export Separate Groups:</span>
                         <template x-for="(groups, secId) in timetableData[selectedLecturer][selectedCourse]" :key="secId">
-                            <button @click="exportGroupCSV(secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
+                            <button @click="exportGroupCSV(selectedLecturer, selectedCourse, secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
                             </button>
                         </template>
                     </div>
@@ -115,44 +115,87 @@
             </table>
         </div>
 
-        <!-- Summary Modal (Categorized by Teacher) -->
+        <!-- Interactive Summary Modal -->
         <div x-show="openSummaryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" style="display: none;">
             <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
                 <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
-                    <h3 class="text-lg font-bold" x-text="`Teacher Workload Summary (${level.toUpperCase()})`"></h3>
+                    <h3 class="text-lg font-bold" x-text="`Workload & Assignment Search (${level.toUpperCase()})`"></h3>
                     <button @click="openSummaryModal = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
                 </div>
-                <div class="p-6 overflow-y-auto space-y-6">
-                    <p class="text-sm text-gray-600">This view categorizes teaching assignments by each lecturer's name, showing their courses, combined section groups, and total enrolled students.</p>
+                
+                <!-- Search & Mode Switcher Bar -->
+                <div class="p-4 bg-gray-100 border-b flex flex-col md:flex-row gap-3 items-center justify-between">
+                    <div class="flex bg-gray-200 p-1 rounded-xl w-full md:w-auto">
+                        <button @click="summaryMode = 'teacher'" :class="summaryMode === 'teacher' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Teacher</button>
+                        <button @click="summaryMode = 'group'" :class="summaryMode === 'group' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Group</button>
+                    </div>
+                    <div class="w-full md:w-72">
+                        <input type="text" x-model="summarySearchQuery" :placeholder="summaryMode === 'teacher' ? 'Type teacher name...' : 'Type group code (e.g. BEN1A)...'" class="w-full rounded-lg border-gray-300 border p-2 text-xs focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Modal Content Area -->
+                <div class="p-6 overflow-y-auto space-y-4">
                     
-                    <template x-for="(coursesObj, lectName) in teacherWorkloadSummary" :key="lectName">
-                        <div class="border rounded-xl p-4 bg-gray-50 shadow-sm">
-                            <div class="flex justify-between items-center mb-3 pb-2 border-b">
-                                <h4 class="font-bold text-gray-900 text-base" x-text="lectName"></h4>
-                                <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" x-text="`${Object.keys(coursesObj).length} Course(s)`"></span>
-                            </div>
-                            <div class="space-y-3">
-                                <template x-for="(sectionsObj, courseCode) in coursesObj" :key="courseCode">
-                                    <div class="bg-white p-3 rounded-lg border space-y-2">
-                                        <div class="text-xs font-bold uppercase text-blue-600 tracking-wider" x-text="courseCode"></div>
-                                        <div class="space-y-2">
-                                            <template x-for="(info, secId) in sectionsObj" :key="secId">
-                                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-2.5 rounded border gap-2">
-                                                    <div>
-                                                        <span class="text-xs font-semibold text-gray-500 mr-2" x-text="`Sec ${secId}:`"></span>
-                                                        <span class="font-bold text-gray-800 text-sm" x-text="info.groups.join(', ')"></span>
-                                                    </div>
-                                                    <div class="bg-blue-50 text-blue-800 text-xs font-bold px-3 py-1 rounded border border-blue-200">
-                                                        <span x-text="info.studentCount"></span> Students
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
+                    <!-- MODE 1: SEARCH BY TEACHER -->
+                    <template x-if="summaryMode === 'teacher'">
+                        <div class="space-y-4">
+                            <template x-for="(coursesObj, lectName) in filteredTeacherSummary" :key="lectName">
+                                <div class="border rounded-xl p-4 bg-gray-50 shadow-sm">
+                                    <div class="flex justify-between items-center mb-3 pb-2 border-b">
+                                        <h4 class="font-bold text-gray-900 text-base" x-text="lectName"></h4>
+                                        <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" x-text="`${Object.keys(coursesObj).length} Course(s)`"></span>
                                     </div>
-                                </template>
-                            </div>
+                                    <div class="space-y-3">
+                                        <template x-for="(sectionsObj, courseCode) in coursesObj" :key="courseCode">
+                                            <div class="bg-white p-3 rounded-lg border space-y-2">
+                                                <div class="text-xs font-bold uppercase text-blue-600 tracking-wider" x-text="courseCode"></div>
+                                                <div class="space-y-2">
+                                                    <template x-for="(info, secId) in sectionsObj" :key="secId">
+                                                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-2.5 rounded border gap-2">
+                                                            <div>
+                                                                <span class="text-xs font-semibold text-gray-500 mr-2" x-text="`Sec ${secId}:`"></span>
+                                                                <span class="font-bold text-gray-800 text-sm" x-text="info.groups.join(', ')"></span>
+                                                            </div>
+                                                            <!-- Clicking this badge instantly downloads the student CSV file! -->
+                                                            <button @click="exportGroupCSV(lectName, courseCode, secId, info.groups)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer" title="Click to download student list">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                                <span x-text="`${info.studentCount} Students (Download)`"></span>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
+
+                    <!-- MODE 2: SEARCH BY GROUP -->
+                    <template x-if="summaryMode === 'group'">
+                        <div class="space-y-3">
+                            <template x-for="item in filteredGroupSummary" :key="item.groupKey + item.courseCode">
+                                <div class="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded" x-text="item.courseCode"></span>
+                                            <span class="font-bold text-gray-900 text-base" x-text="item.groupKey"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <span class="font-medium text-gray-700">Assigned Teachers (<span x-text="item.teachers.length"></span>):</span> 
+                                            <span x-text="item.teachers.join(' | ')"></span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-200">
+                                        <span x-text="item.studentCount"></span> Enrolled Students
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
                 </div>
                 <div class="p-4 bg-gray-100 flex justify-end">
                     <button @click="openSummaryModal = false" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">Close Summary</button>
@@ -220,7 +263,7 @@
             "DTMP": "DIPLOMA TEKNOLOGI MAKMAL PERUBATAN",
             "DFISIO": "DIPLOMA FISIOTERAPI",
             "DRAD": "DIPLOMA RADIOGRAFI",
-            "DLAW": "DIPLOMA UNDANG-UNDANG",
+            "DLAW": "DIPLOMA UNDANG-UNDang",
             "DNURS": "DIPLOMA SAINS KEJURURAWATAN",
             "DRP": "DIPLOMA REKA BENTUK PERINDUSTRIAN",
             "DTP": "DIPLOMA TEKNOLOGI PEMBUATAN",
@@ -246,6 +289,8 @@
                 selectedProgram: '',
                 searchQuery: '',
                 openSummaryModal: false,
+                summaryMode: 'teacher', // 'teacher' or 'group'
+                summarySearchQuery: '',
                 
                 async init() {
                     await this.loadTimetable();
@@ -324,13 +369,11 @@
                 get teacherWorkloadSummary() {
                     let summary = {};
                     
-                    // Iterate through timetable data categorized by teacher name
                     for (let lect in this.timetableData) {
                         let lectCourses = {};
                         let hasRelevantCourse = false;
 
                         for (let course in this.timetableData[lect]) {
-                            // Filter by active level prefix (PDC vs PBC)
                             if (this.level === 'degree' && !course.startsWith('PDC')) continue;
                             if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
 
@@ -340,8 +383,6 @@
 
                             for (let secId in sections) {
                                 let groups = sections[secId];
-
-                                // Calculate student count for this section group combination
                                 let groupProgs = new Set();
                                 groups.forEach(g => {
                                     let match = g.match(/^([A-Z]+)\d+/);
@@ -362,7 +403,6 @@
                                     studentCount: count
                                 };
                             }
-
                             lectCourses[course] = lectSectionsObj;
                         }
 
@@ -371,6 +411,77 @@
                         }
                     }
                     return summary;
+                },
+
+                get filteredTeacherSummary() {
+                    let raw = this.teacherWorkloadSummary;
+                    if (!this.summarySearchQuery) return raw;
+                    
+                    let q = this.summarySearchQuery.toLowerCase();
+                    let filtered = {};
+                    for (let lect in raw) {
+                        if (lect.toLowerCase().includes(q)) {
+                            filtered[lect] = raw[lect];
+                        }
+                    }
+                    return filtered;
+                },
+
+                get filteredGroupSummary() {
+                    let groupMap = {}; // key: groupKey + courseCode
+                    
+                    for (let lect in this.timetableData) {
+                        for (let course in this.timetableData[lect]) {
+                            if (this.level === 'degree' && !course.startsWith('PDC')) continue;
+                            if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
+
+                            let sections = this.timetableData[lect][course];
+                            for (let secId in sections) {
+                                let groups = sections[secId];
+                                let groupKey = groups.join(', ');
+                                let mapKey = course + "_" + groupKey;
+
+                                if (!groupMap[mapKey]) {
+                                    let groupProgs = new Set();
+                                    groups.forEach(g => {
+                                        let match = g.match(/^([A-Z]+)\d+/);
+                                        if (match && programMap[match[1]]) {
+                                            groupProgs.add(programMap[match[1]]);
+                                        }
+                                    });
+
+                                    let count = this.students.filter(s => {
+                                        let matchCourse = s.assignedCourse === course;
+                                        let studentProg = String(s.PROGRAM || '').trim();
+                                        let matchProg = Array.from(groupProgs).some(p => studentProg.includes(p));
+                                        return matchCourse && matchProg;
+                                    }).length;
+
+                                    groupMap[mapKey] = {
+                                        courseCode: course,
+                                        groupKey: groupKey,
+                                        groups: groups,
+                                        teachers: [],
+                                        studentCount: count
+                                    };
+                                }
+
+                                if (!groupMap[mapKey].teachers.includes(lect)) {
+                                    groupMap[mapKey].teachers.push(lect);
+                                }
+                            }
+                        }
+                    }
+
+                    let results = Object.values(groupMap);
+                    if (!this.summarySearchQuery) return results;
+
+                    let q = this.summarySearchQuery.toLowerCase();
+                    return results.filter(item => 
+                        item.groupKey.toLowerCase().includes(q) || 
+                        item.courseCode.toLowerCase().includes(q) ||
+                        item.teachers.some(t => t.toLowerCase().includes(q))
+                    );
                 },
 
                 get filteredStudents() {
@@ -410,7 +521,7 @@
                     });
                 },
 
-                exportGroupCSV(secId, groupCodes) {
+                exportGroupCSV(lectName, courseCode, secId, groupCodes) {
                     let groupPrograms = new Set();
                     groupCodes.forEach(g => {
                         let match = g.match(/^([A-Z]+)\d+/);
@@ -419,8 +530,9 @@
                         }
                     });
 
+                    // Ensure we evaluate against the correct course assignment
                     let groupStudents = this.students.filter(s => {
-                        let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
+                        let matchCourse = s.assignedCourse === courseCode;
                         let studentProg = String(s.PROGRAM || '').trim();
                         let matchProg = Array.from(groupPrograms).some(p => studentProg.includes(p));
                         return matchCourse && matchProg;
@@ -436,7 +548,7 @@
                     let encodedUri = encodeURI(csvContent);
                     let link = document.createElement("a");
                     link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `${this.selectedLecturer}_Sec${secId}_(${groupCodes.join('_')}).csv`);
+                    link.setAttribute("download", `${lectName}_${courseCode}_Sec${secId}_(${groupCodes.join('_')}).csv`);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
