@@ -13,32 +13,32 @@
         <!-- Header & Level Toggle -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster Automation</h1>
-                <p class="text-sm text-gray-500">Automated student allocation for Degree and Diploma English courses.</p>
+                <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
+                <p class="text-sm text-gray-500">Automated student allocation and combined section group matching for Degree and Diploma.</p>
             </div>
             <div class="mt-4 md:mt-0 flex bg-gray-200 p-1 rounded-xl">
-                <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree Roster</button>
-                <button @click="switchLevel('diploma')" :class="level === 'diploma' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Diploma Roster</button>
+                <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree (MUET)</button>
+                <button @click="switchLevel('diploma')" :class="level === 'diploma' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Diploma (CEFRSAH)</button>
             </div>
         </div>
 
         <!-- Filters Grid -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Course</label>
-                <select x-model="selectedCourse" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Courses (<span x-text="level.toUpperCase()"></span>)</option>
-                    <template x-for="course in availableCourses">
-                        <option :value="course" x-text="course"></option>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Select Lecturer</label>
+                <select x-model="selectedLecturer" @change="applyLecturerFilter" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Lecturers / Manual Filter</option>
+                    <template x-for="lect in lecturers" :key="lect">
+                        <option :value="lect" x-text="lect"></option>
                     </template>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Faculty</label>
-                <select x-model="selectedFaculty" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Faculties</option>
-                    <template x-for="fac in faculties">
-                        <option :value="fac" x-text="fac"></option>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Course</label>
+                <select x-model="selectedCourse" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Courses (<span x-text="level.toUpperCase()"></span>)</option>
+                    <template x-for="course in availableCourses" :key="course">
+                        <option :value="course" x-text="course"></option>
                     </template>
                 </select>
             </div>
@@ -46,7 +46,7 @@
                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Program</label>
                 <select x-model="selectedProgram" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">All Programs</option>
-                    <template x-for="prog in programs">
+                    <template x-for="prog in programs" :key="prog">
                         <option :value="prog" x-text="prog"></option>
                     </template>
                 </select>
@@ -100,23 +100,109 @@
     </div>
 
     <script>
+        // Verified Program Code Mappings
+        const programMap = {
+            "BEN": "SARJANA MUDA BAHASA INGGERIS DENGAN KOMUNIKASI (KEPUJIAN)",
+            "SMBIOMED": "SARJANA MUDA SAINS BIOPERUBATAN DENGAN KEPUJIAN",
+            "SMLAW": "IJAZAH SARJANA MUDA UNDANG-UNDANG DENGAN KEPUJIAN",
+            "BAC": "SARJANA MUDA PERAKAUNAN DENGAN KEPUJIAN",
+            "SMNUTRI": "SARJANA MUDA SAINS PEMAKANAN (KEPUJIAN)",
+            "SMDIET": "SARJANA MUDA DIETETIK (KEPUJIAN)",
+            "SMUSU": "SARJANA MUDA PENGAJIAN ISLAM (USULUDDIN) DENGAN KEPUJIAN",
+            "ISMPI": "IJAZAH SARJANA MUDA PENDIDIKAN (PENDIDIKAN ISLAM) DENGAN KEPUJIAN",
+            "BBARMT": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (PENGURUSAN RISIKO DAN TAKAFUL) DENGAN KEPUJIAN",
+            "SMKS": "IJAZAH SARJANA MUDA KERJA SOSIAL DENGAN KEPUJIAN",
+            "SMSSD": "SARJANA MUDA SAINS SOSIAL ANTROPOLOGI DENGAN DAKWAH (KEPUJIAN)",
+            "BAM": "SARJANA MUDA BAHASA MELAYU KONTEMPORARI DENGAN MEDIA INTERAKTIF (KEPUJIAN)",
+            "BPR": "SARJANA MUDA PERHUBUNGAN AWAM DENGAN MEDIA KONTEMPORARI (KEPUJIAN)",
+            "BBAIF": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (KEWANGAN ISLAM) DENGAN KEPUJIAN",
+            "SMFARMASI": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
+            "SMTM": "SARJANA MUDA TEKNOLOGI MAKANAN DENGAN KEPUJIAN",
+            "SMPI": "SARJANA MUDA PELANCONGAN ISLAM DENGAN KEPUJIAN",
+            "SMAB": "SARJANA MUDA AGROBIOTEKNOLOGI DENGAN KEPUJIAN",
+            "SMA": "SARJANA MUDA AGRONOMI DENGAN KEPUJIAN",
+            "SMQIRAAT": "SARJANA MUDA AL-QURAN DAN AL-SUNNAH (QIRAAT) DENGAN KEPUJIAN",
+            "SMF": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
+            "SMIR": "SARJANA MUDA HUBUNGAN ANTARABANGSA DENGAN KEPUJIAN",
+            "SMPMH": "SARJANA MUDA PEMBANGUNAN MAKANAN HALAL DENGAN KEPUJIAN",
+            "BAS": "SARJANA MUDA PENGAJIAN BAHASA ARAB DENGAN KEPUJIAN",
+            "SMDAK": "SARJANA MUDA PENGAJIAN ISLAM (DAKWAH) DENGAN KEPUJIAN",
+            "SMSYA": "SARJANA MUDA PENGAJIAN ISLAM (SYARIAH) DENGAN KEPUJIAN",
+            "SMIMAGE": "SARJANA MUDA PENGIMEJAN PERUBATAN (KEPUJIAN)",
+            "BIWM": "SARJANA MUDA PENGURUSAN KEKAYAAN ISLAM DENGAN KEPUJIAN",
+            "SMPT": "SARJANA MUDA PERNIAGAANTANI DENGAN KEPUJIAN",
+            "MBBS": "SARJANA MUDA PERUBATAN DAN PEMBEDAHAN",
+            "SMPKH": "SARJANA MUDA PRODUKSI DAN KESIHATAN HAIWAN DENGAN KEPUJIAN",
+            "SMSA": "SARJANA MUDA SAINS AKUATIK DENGAN KEPUJIAN",
+            "SMNURSING": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
+            "SMNURS": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
+            "SMSKKRK": "SARJANA MUDA SAINS KOMPUTER (KESELAMATAN RANGKAIAN KOMPUTER) DENGAN KEPUJIAN",
+            "SMSKKI": "SARJANA MUDA SAINS KOMPUTER (KOMPUTERAN INTERNET) DENGAN KEPUJIAN",
+            "SMSKPP": "SARJANA MUDA SAINS KOMPUTER (PEMBANGUNAN PERISIAN) DENGAN KEPUJIAN",
+            "BMHS": "SARJANA MUDA SAINS PERUBATAN DAN KESIHATAN DENGAN KEPUJIAN",
+            "SMSSP": "SARJANA MUDA SAINS SOSIAL PERSEKITARAN DENGAN KEPUJIAN",
+            "SMRP": "SARJANA MUDA SENI (REKA BENTUK PERINDUSTRIAN) DENGAN KEPUJIAN",
+            "SMTP": "SARJANA MUDA TEKNOLOGI KEJURUTERAAN PEMBUATAN (REKA BENTUK PRODUK) DENGAN KEPUJIAN",
+            "SMTMIM": "SARJANA MUDA TEKNOLOGI MAKLUMAT (INFORMATIK MEDIA) DENGAN KEPUJIAN",
+            "SMTPT": "SARJANA MUDA TEKNOLOGI PEMBIAKBAKAAN TUMBUHAN DENGAN KEPUJIAN",
+            "SMTPr": "SARJANA MUDA TEKNOLOGI POLIMER DENGAN KEPUJIAN",
+            "SMUSUK": "SARJANA MUDA USULUDDIN DENGAN KAUNSELING (KEPUJIAN)",
+            "DTM": "DIPLOMA TEKNOLOGI MAKLUMAT",
+            "DSK": "DIPLOMA SAINS KOMPUTER",
+            "DHRM": "DIPLOMA PENGURUSAN SUMBER MANUSIA",
+            "DIB": "DIPLOMA PENGAJIAN BANK",
+            "DIF": "DIPLOMA KEWANGAN",
+            "DIM": "DIPLOMA PEMASARAN",
+            "DII": "DIPLOMA PENGAJIAN INSURANS",
+            "DITB": "DIPLOMA PERNIAGAAN ANTARABANGSA",
+            "DTMP": "DIPLOMA TEKNOLOGI MAKMAL PERUBATAN",
+            "DFISIO": "DIPLOMA FISIOTERAPI",
+            "DRAD": "DIPLOMA RADIOGRAFI",
+            "DLAW": "DIPLOMA UNDANG-UNDANG",
+            "DNURS": "DIPLOMA SAINS KEJURURAWATAN",
+            "DRP": "DIPLOMA REKA BENTUK PERINDUSTRIAN",
+            "DTP": "DIPLOMA TEKNOLOGI PEMBUATAN",
+            "DIA": "DIPLOMA PERAKAUNAN",
+            "DQWS": "DIPLOMA AL-QURAN DAN AS-SUNNAH",
+            "DSYA": "DIPLOMA SYARIAH",
+            "DUSU": "DIPLOMA USULUDDIN",
+            "DPTI": "DIPLOMA PENTADBIRAN ISLAM",
+            "DBAH": "DIPLOMA BAHASA DAN KESUSASTERAAN ARAB",
+            "DDAK": "DIPLOMA DAKWAH",
+            "DMPI": "DIPLOMA MEDIA PENYIARAN ISLAM",
+            "DSTI": "DIPLOMA SEJARAH DAN TAMADUN ISLAM"
+        };
+
         function rosterApp() {
             return {
                 level: 'degree',
                 students: [],
+                lecturers: [],
+                timetableData: {},
+                selectedLecturer: '',
                 selectedCourse: '',
-                selectedFaculty: '',
                 selectedProgram: '',
                 searchQuery: '',
                 
-                init() {
+                async init() {
+                    await this.loadTimetable();
                     this.loadData();
+                },
+
+                async loadTimetable() {
+                    try {
+                        let res = await fetch('timetable-mapping.json');
+                        this.timetableData = await res.json();
+                        this.lecturers = Object.keys(this.timetableData).sort();
+                    } catch(e) {
+                        console.error("Timetable mapping JSON not found yet.", e);
+                    }
                 },
 
                 switchLevel(lvl) {
                     this.level = lvl;
                     this.selectedCourse = '';
-                    this.selectedFaculty = '';
+                    this.selectedLecturer = '';
                     this.selectedProgram = '';
                     this.searchQuery = '';
                     this.loadData();
@@ -150,32 +236,66 @@
                         });
                 },
 
+                applyLecturerFilter() {
+                    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
+                        let courses = Object.keys(this.timetableData[this.selectedLecturer]);
+                        if (courses.length > 0) {
+                            this.selectedCourse = courses[0]; // Auto-select first course
+                        }
+                    }
+                },
+
                 get availableCourses() {
+                    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
+                        return Object.keys(this.timetableData[this.selectedLecturer]);
+                    }
                     return this.level === 'degree' 
                         ? ['PDC12202', 'PDC12302', 'PDC12402'] 
                         : ['PBC11802', 'PBC11902', 'PBC12002'];
                 },
 
-                get faculties() {
-                    return [...new Set(this.students.map(s => s.FAKULTI))].filter(Boolean).sort();
-                },
-
                 get programs() {
-                    let list = this.selectedFaculty 
-                        ? this.students.filter(s => s.FAKULTI === this.selectedFaculty)
-                        : this.students;
+                    let list = this.students;
                     return [...new Set(list.map(s => s.PROGRAM))].filter(Boolean).sort();
                 },
 
                 get filteredStudents() {
+                    // Collect allowed programs from selected lecturer's combined timetable groups if lecturer is selected
+                    let allowedFullPrograms = null;
+                    if (this.selectedLecturer && this.selectedCourse && this.timetableData[this.selectedLecturer]?.[this.selectedCourse]) {
+                        allowedFullPrograms = new Set();
+                        let sections = this.timetableData[this.selectedLecturer][this.selectedCourse];
+                        for (let secId in sections) {
+                            let groups = sections[secId];
+                            groups.forEach(g => {
+                                // Extract prefix before numbers (e.g., "BEN1A" -> "BEN")
+                                let match = g.match(/^([A-Z]+)\d+/);
+                                if (match) {
+                                    let code = match[1];
+                                    if (programMap[code]) {
+                                        allowedFullPrograms.add(programMap[code]);
+                                    }
+                                }
+                            });
+                        }
+                    }
+
                     return this.students.filter(s => {
                         let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
-                        let matchFaculty = !this.selectedFaculty || s.FAKULTI === this.selectedFaculty;
                         let matchProgram = !this.selectedProgram || s.PROGRAM === this.selectedProgram;
+                        
+                        // If lecturer is selected, check if student's program matches any combined group program for that lecturer/course
+                        let matchLecturerGroups = true;
+                        if (allowedFullPrograms !== null) {
+                            let studentProg = String(s.PROGRAM || '').trim();
+                            matchLecturerGroups = Array.from(allowedFullPrograms).some(p => studentProg.includes(p));
+                        }
+
                         let matchSearch = !this.searchQuery || 
                             s.NAMAPEL.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                             String(s.NOPEL).includes(this.searchQuery);
-                        return matchCourse && matchFaculty && matchProgram && matchSearch;
+                            
+                        return matchCourse && matchProgram && matchLecturerGroups && matchSearch;
                     });
                 },
 
@@ -190,7 +310,7 @@
                     let encodedUri = encodeURI(csvContent);
                     let link = document.createElement("a");
                     link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `UniSZA_${this.level.toUpperCase()}_Roster.csv`);
+                    link.setAttribute("download", `UniSZA_${this.selectedLecturer || this.level}_Roster.csv`);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
