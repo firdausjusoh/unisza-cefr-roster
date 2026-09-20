@@ -517,32 +517,31 @@
                         return matchCourse && matchProg;
                     });
 
-                    // Build formal UniSZA Attendance Form structure using SheetJS
+                    // Build formal UniSZA Attendance Form structure with separate Program column
                     let ws_data = [
-                        ["KEHADIRAN KELAS PENGAJARAN", "", "", "", "", "", ""],
-                        ["(UniSZA-PT01-PK01-BR002-S01)", "", "", "", "", "", ""],
-                        ["", "", "", "", "", "", ""],
-                        ["SEMESTER :", "Semester I 2026/2027", "", "", "MINGGU", "", ""],
-                        ["KOD KURSUS:", courseCode, "", "", "MASA", "", ""],
-                        ["SESI AKADEMIK :", "2026/2027", "", "", "", "", ""],
-                        ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", "", "", "", ""],
-                        ["JABATAN/PROGRAM:", groupCodes.join(", "), "", "", "", "", ""],
-                        ["", "", "", "", "", "", ""],
-                        ["BIL.", "NO. MATRIK", "NAMA & PROGRAM", "TARIKH", "TANDATANGAN", "", ""]
+                        ["KEHADIRAN KELAS PENGAJARAN", "", "", ""],
+                        ["(UniSZA-PT01-PK01-BR002-S01)", "", "", ""],
+                        ["", "", "", ""],
+                        ["SEMESTER :", "Semester I 2026/2027", "", "MINGGU"],
+                        ["KOD KURSUS:", courseCode, "", "MASA"],
+                        ["SESI AKADEMIK :", "2026/2027", "", ""],
+                        ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", ""],
+                        ["JABATAN/PROGRAM:", groupCodes.join(", "), "", ""],
+                        ["", "", "", ""],
+                        ["BIL.", "NO. MATRIK", "NAMA", "PROGRAM"]
                     ];
 
                     groupStudents.forEach((s, index) => {
-                        let displayName = `${s.NAMAPEL} (${s.PROGRAM || 'N/A'})`;
-                        ws_data.push([index + 1, String(s.NOPEL), displayName, "", "", "", ""]);
+                        ws_data.push([index + 1, String(s.NOPEL), s.NAMAPEL, s.PROGRAM || ""]);
                     });
 
                     // Add footer sign-off rows
                     ws_data.push([]);
-                    ws_data.push(["(UNTUK TINDAKAN PENSYARAH - PERAKU PELAKSANAAN KELAS DAN SIMPAN BORANG DALAM FAIL KURSUS)", "", "", "", "", "", ""]);
-                    ws_data.push(["DIPERAKUKAN KELAS PENGAJARAN DI ATAS TELAH DILAKSANAKAN", "", "", "", "", "", ""]);
-                    ws_data.push(["TANDATANGAN", ":", "", "", "", "", ""]);
-                    ws_data.push(["NAMA/COP RASMI", ": " + lectName, "", "", "", "", ""]);
-                    ws_data.push(["TARIKH", ":", "", "", "", "", ""]);
+                    ws_data.push(["(UNTUK TINDAKAN PENSYARAH - PERAKU PELAKSANAAN KELAS DAN SIMPAN BORANG DALAM FAIL KURSUS)", "", "", ""]);
+                    ws_data.push(["DIPERAKUKAN KELAS PENGAJARAN DI ATAS TELAH DILAKSANAKAN", "", "", ""]);
+                    ws_data.push(["TANDATANGAN", ":", "", ""]);
+                    ws_data.push(["NAMA/COP RASMI", ": " + lectName, "", ""]);
+                    ws_data.push(["TARIKH", ":", "", ""]);
 
                     let wb = XLSX.utils.book_new();
                     let ws = XLSX.utils.aoa_to_sheet(ws_data);
@@ -551,11 +550,8 @@
                     ws['!cols'] = [
                         {wch: 6},  // BIL
                         {wch: 15}, // NO MATRIK
-                        {wch: 55}, // NAMA & PROGRAM (wider to accommodate program name)
-                        {wch: 12}, // TARIKH
-                        {wch: 20}, // TANDATANGAN
-                        {wch: 10},
-                        {wch: 10}
+                        {wch: 40}, // NAMA
+                        {wch: 55}  // PROGRAM (separate dedicated column)
                     ];
 
                     XLSX.utils.book_append_sheet(wb, ws, "Kehadiran");
