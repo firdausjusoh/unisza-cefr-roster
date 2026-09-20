@@ -528,11 +528,12 @@
                         ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", "", "", "", ""],
                         ["JABATAN/PROGRAM:", groupCodes.join(", "), "", "", "", "", ""],
                         ["", "", "", "", "", "", ""],
-                        ["BIL.", "NO. MATRIK", "NAMA", "TARIKH", "TANDATANGAN", "", ""]
+                        ["BIL.", "NO. MATRIK", "NAMA & PROGRAM", "TARIKH", "TANDATANGAN", "", ""]
                     ];
 
                     groupStudents.forEach((s, index) => {
-                        ws_data.push([index + 1, String(s.NOPEL), s.NAMAPEL, "", "", "", ""]);
+                        let displayName = `${s.NAMAPEL} (${s.PROGRAM || 'N/A'})`;
+                        ws_data.push([index + 1, String(s.NOPEL), displayName, "", "", "", ""]);
                     });
 
                     // Add footer sign-off rows
@@ -550,7 +551,7 @@
                     ws['!cols'] = [
                         {wch: 6},  // BIL
                         {wch: 15}, // NO MATRIK
-                        {wch: 40}, // NAMA
+                        {wch: 55}, // NAMA & PROGRAM (wider to accommodate program name)
                         {wch: 12}, // TARIKH
                         {wch: 20}, // TANDATANGAN
                         {wch: 10},
