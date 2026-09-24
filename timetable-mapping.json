@@ -37,8 +37,7 @@
       "54761": [
         "SMNUTRI1A",
         "SMNUTRI1B"
-      ],
-      "54774": [
+      ]
     }
   },
   "ADIBAH NADZIRAH BINTI ISMAIL": {
@@ -215,9 +214,8 @@
       "52747": [
         "SMPKH1"
       ]
-    },
     }
-  },
+    },
   "AHMAD FAHMI BIN RAMLI": {
     "PBC12002": {
       "52681": [
@@ -227,17 +225,9 @@
       "52685": [
         "DTM2A",
         "DTM2B"
-      ],
+      ]
     },
     "PDC12402": {
-      "52681": [
-        "DSK2A",
-        "DSK2B"
-      ],
-      "52685": [
-        "DTM2A",
-        "DTM2B"
-      ],
       "52695": [
         "SMSKKRK1A",
         "SMSKKRK1B"
@@ -410,14 +400,6 @@
   },
   "MOHD SUHAIMI BIN ABAS": {
     "PDC12202": {
-      "52664": [
-        "DSK2A",
-        "DSK2B"
-      ],
-      "52682": [
-        "DTM2A",
-        "DTM2B"
-      ],
       "52687": [
         "SMSKPP1A",
         "SMSKPP1B",
@@ -448,27 +430,6 @@
       "52682": [
         "DTM2A",
         "DTM2B"
-      ],
-      "52687": [
-        "SMSKPP1A",
-        "SMSKPP1B",
-        "SMSKKRK1A",
-        "SMSKKRK1B"
-      ],
-      "52703": [
-        "SMPT1",
-        "SMAB1A",
-        "SMAB1B"
-      ],
-      "52712": [
-        "SMSA1",
-        "SMTPT1"
-      ],
-      "52717": [
-        "SMPMH1"
-      ],
-      "52728": [
-        "SMA1"
       ]
     }
   },
@@ -481,39 +442,9 @@
         "DTP2",
         "DRP2A",
         "DRP2B"
-      ],
-      "54423": [
-        "MBBS1"
-      ],
-      "54424": [
-        "SMIR1B"
-      ],
-      "54425": [
-        "SMLAW1B"
-      ],
-      "54426": [
-        "BEN1C"
-      ],
-      "54427": [
-        "BAC1A",
-        "BAC1C"
-      ],
-      "54428": [
-        "SMNURS1"
-      ],
-      "54429": [
-        "SMIMAGE1A"
       ]
     },
     "PDC12402": {
-      "54421": [
-        "DNURS2"
-      ],
-      "54422": [
-        "DTP2",
-        "DRP2A",
-        "DRP2B"
-      ],
       "54423": [
         "MBBS1"
       ],
@@ -647,42 +578,8 @@
       "54413": [
         "DITB2"
       ],
-      "54414": [
-        "BMHS1"
-      ],
-      "54415": [
-        "BBAIF1B",
-        "BBAIF1C"
-      ],
-      "54416": [
-        "SMSYA1A",
-        "SMSYA1B",
-        "SMQIRAAT1"
-      ],
-      "54417": [
-        "SMLAW1A"
-      ],
-      "54418": [
-        "BEN1B"
-      ],
-      "54419": [
-        "SMNUTRI1A",
-        "SMNUTRI1B"
-      ],
-      "54420": [
-        "SMDAK1A",
-        "SMDAK1B",
-        "SMUSUK1A",
-        "SMUSUK1B"
-      ]
     },
     "PDC12402": {
-      "54412": [
-        "DLAW2"
-      ],
-      "54413": [
-        "DITB2"
-      ],
       "54414": [
         "BMHS1"
       ],
@@ -718,37 +615,9 @@
       "52666": [
         "DSK2A",
         "DSK2B"
-      ],
-      "52689": [
-        "SMSKPP1A",
-        "SMSKPP1B"
-      ],
-      "52697": [
-        "SMSKKI1A",
-        "SMSKKI1B"
-      ],
-      "52708": [
-        "SMPT1"
-      ],
-      "52713": [
-        "SMSA1"
-      ],
-      "52742": [
-        "SMFARMASI1"
-      ],
-      "52745": [
-        "SMPKH1"
-      ],
-      "55573": [
-        "SMTM1A",
-        "SMTM1B"
       ]
     },
     "PDC12302": {
-      "52666": [
-        "DSK2A",
-        "DSK2B"
-      ],
       "52689": [
         "SMSKPP1A",
         "SMSKPP1B"
@@ -809,20 +678,6 @@
   },
   "RAJA NOOR SYUHAIDA BINTI RAJA YAHYA": {
     "PBC12002": {
-      "54368": [
-        "DSYA2A",
-        "DSYA2B",
-        "DUSU2A",
-        "DUSU2B",
-        "DBAH2A",
-        "DBAH2B",
-        "DDAK2A"
-      ],
-      "54369": [
-        "DTP2",
-        "DRP2A",
-        "DRP2B"
-      ],
       "54371": [
         "DSYA2A",
         "DSYA2B"
@@ -863,43 +718,21 @@
         "DUSU2B",
         "DBAH2A",
         "DBAH2B",
-        "DDAK2A"
+        "DDAK2A",
+        "DDAK2B",
+        "DQWS2A",
+        "DQWS2B",
+        "DSTI2A",
+        "DSTI2B",
+        "DPTI2A",
+        "DPTI2B",
+        "DMPI2A",
+        "DII2"
       ],
       "54369": [
         "DTP2",
         "DRP2A",
         "DRP2B"
-      ],
-      "54371": [
-        "DSYA2A",
-        "DSYA2B"
-      ],
-      "54372": [
-        "DUSU2A",
-        "DUSU2B",
-        "DDAK2A",
-        "DDAK2B"
-      ],
-      "54373": [
-        "DBAH2A",
-        "DBAH2B"
-      ],
-      "54374": [
-        "DQWS2A",
-        "DQWS2B"
-      ],
-      "54375": [
-        "DSTI2A",
-        "DSTI2B",
-        "DMPI2A"
-      ],
-      "54376": [
-        "DPTI2A",
-        "DPTI2B"
-      ],
-      "54377": [
-        "DIM2",
-        "DII2"
       ]
     }
   },
