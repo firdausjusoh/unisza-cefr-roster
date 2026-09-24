@@ -1,10 +1,6 @@
 {
   "ADHWA SYUKRINA BINTI AHMAD NASRI": {
     "PDC12402": {
-      "54761": [
-        "SMNUTRI1A",
-        "SMNUTRI1B"
-      ],
       "54767": [
         "SMLAW1C"
       ],
@@ -42,37 +38,7 @@
         "SMNUTRI1A",
         "SMNUTRI1B"
       ],
-      "54767": [
-        "SMLAW1C"
-      ],
-      "54770": [
-        "SMUSU1A",
-        "SMUSU1B",
-        "ISMPI1A",
-        "ISMPI1B"
-      ],
-      "54771": [
-        "SMDIET1A"
-      ],
       "54774": [
-        "BEN1A",
-        "BEN1B",
-        "BEN1C"
-      ],
-      "54780": [
-        "BAC1B",
-        "BAC1C"
-      ],
-      "54781": [
-        "MBBS1"
-      ],
-      "54784": [
-        "BBARMT1A",
-        "BBARMT1B"
-      ],
-      "54785": [
-        "SMBIOMED1A"
-      ]
     }
   },
   "ADIBAH NADZIRAH BINTI ISMAIL": {
@@ -116,37 +82,8 @@
         "DTM2A",
         "DTM2B"
       ],
-      "52693": [
-        "SMSKKRK1A",
-        "SMSKKRK1B"
-      ],
-      "52699": [
-        "SMTMIM1A",
-        "SMTMIM1B"
-      ],
-      "52710": [
-        "SMAB1A",
-        "SMAB1B"
-      ],
-      "52715": [
-        "SMTPT1"
-      ],
-      "52721": [
-        "SMPMH1"
-      ],
-      "52730": [
-        "SMA1"
-      ],
-      "52738": [
-        "SMTM1A",
-        "SMTM1B"
-      ]
     },
     "PDC12302": {
-      "52683": [
-        "DTM2A",
-        "DTM2B"
-      ],
       "52693": [
         "SMSKKRK1A",
         "SMSKKRK1B"
@@ -255,37 +192,8 @@
         "DTM2A",
         "DTM2B"
       ],
-      "52692": [
-        "SMSKPP1A",
-        "SMSKPP1B"
-      ],
-      "52698": [
-        "SMSKKI1A",
-        "SMSKKI1B"
-      ],
-      "52709": [
-        "SMPT1"
-      ],
-      "52714": [
-        "SMSA1",
-        "SMTPT1"
-      ],
-      "52724": [
-        "SMPMH1"
-      ],
-      "52747": [
-        "SMPKH1"
-      ]
     },
     "PDC12402": {
-      "52678": [
-        "DSK2A",
-        "DSK2B"
-      ],
-      "52684": [
-        "DTM2A",
-        "DTM2B"
-      ],
       "52692": [
         "SMSKPP1A",
         "SMSKPP1B"
@@ -308,36 +216,6 @@
         "SMPKH1"
       ]
     },
-    "PDC12302": {
-      "52678": [
-        "DSK2A",
-        "DSK2B"
-      ],
-      "52684": [
-        "DTM2A",
-        "DTM2B"
-      ],
-      "52692": [
-        "SMSKPP1A",
-        "SMSKPP1B"
-      ],
-      "52698": [
-        "SMSKKI1A",
-        "SMSKKI1B"
-      ],
-      "52709": [
-        "SMPT1"
-      ],
-      "52714": [
-        "SMSA1",
-        "SMTPT1"
-      ],
-      "52724": [
-        "SMPMH1"
-      ],
-      "52747": [
-        "SMPKH1"
-      ]
     }
   },
   "AHMAD FAHMI BIN RAMLI": {
@@ -350,31 +228,6 @@
         "DTM2A",
         "DTM2B"
       ],
-      "52695": [
-        "SMSKKRK1A",
-        "SMSKKRK1B"
-      ],
-      "52700": [
-        "SMTMIM1A",
-        "SMTMIM1B"
-      ],
-      "52711": [
-        "SMAB1A",
-        "SMAB1B"
-      ],
-      "52731": [
-        "SMA1"
-      ],
-      "52739": [
-        "SMTM1A",
-        "SMTM1B"
-      ],
-      "52743": [
-        "SMFARMASI1"
-      ],
-      "52749": [
-        "SMPKH1"
-      ]
     },
     "PDC12402": {
       "52681": [
@@ -725,21 +578,6 @@
   },
   "NABILAH BINTI ISMAIL @ ABD. LATIF": {
     "PDC12402": {
-      "54788": [
-        "SMUSU1A",
-        "SMUSU1B",
-        "SMSYA1A",
-        "SMSYA1B",
-        "SMDAK1A",
-        "SMDAK1B"
-      ],
-      "54792": [
-        "SMUSUK1A",
-        "SMUSUK1B",
-        "SMQIRAAT1",
-        "SMSSD1A",
-        "SMSSD1B"
-      ],
       "54794": [
         "SMSSD1A",
         "SMSSD1B",
@@ -776,43 +614,29 @@
         "SMSYA1A",
         "SMSYA1B",
         "SMDAK1A",
-        "SMDAK1B"
+        "SMDAK1B",
+        "ISMPI1A",
+        "ISMPI1B"
       ],
       "54792": [
         "SMUSUK1A",
         "SMUSUK1B",
         "SMQIRAAT1",
         "SMSSD1A",
-        "SMSSD1B"
-      ],
-      "54794": [
-        "SMSSD1A",
         "SMSSD1B",
         "SMSSD1C",
-        "SMPI1",
-        "SMSSP1"
-      ],
-      "54797": [
         "SMKS1A",
-        "SMKS1B"
+        "SMKS1B",
+        "SMRP1A",
+        "SMRP1igot",
+        "SMTPr1",
+        "SMTP1A",
+        "SMTP1F",
+        "BAS1A",
+        "BAS1B",
+        "BAS1C",
+        "BAS1D"
       ],
-      "54798": [
-        "BIWM1A",
-        "BIWM1B"
-      ],
-      "54802": [
-        "SMIR1A"
-      ],
-      "54803": [
-        "MBBS1"
-      ],
-      "54807": [
-        "BEN1A"
-      ],
-      "54808": [
-        "BBAIF1A",
-        "BBAIF1C"
-      ]
     }
   },
   "NUR NAIMHAFIZAH BINTI RAMLI": {
