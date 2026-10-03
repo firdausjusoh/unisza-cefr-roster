@@ -555,7 +555,7 @@
    async exportAttendanceExcel(lectName, courseCode, secId, groupCodes) {
     let groupPrograms = new Set();
     groupCodes.forEach(g => {
-     let match = g.match(/^([A-Z]+)\d+/);
+     let match = g.match(/^([A-Za-z]+)\d+/);
      if (match && programMap[match[1]]) {
       groupPrograms.add(programMap[match[1]]);
      }
