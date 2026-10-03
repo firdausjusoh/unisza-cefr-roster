@@ -1,581 +1,633 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>UniSZA English Course Roster & Timetable Automation</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+ <meta charset="UTF-8">
+ <title>UniSZA English Course Roster & Timetable Automation</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 p-6" x-data="rosterApp()">
-    <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm">
-        
-        <!-- Header & Level Toggle & Summary Modal Button -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
-                <p class="text-sm text-gray-500">Automated student allocation, official attendance sheet export, and interactive workload search.</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <button @click="openSummaryModal = true" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    Interactive Workload & Search Summary
-                </button>
-                <div class="flex bg-gray-200 p-1 rounded-xl">
-                    <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree</button>
-                    <button @click="switchLevel('diploma')" :class="level === 'diploma' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Diploma</button>
-                </div>
-            </div>
-        </div>
+ <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm">
+ 
+  <!-- Header & Level Toggle & Summary Modal Button -->
+  <div class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b gap-4">
+   <div>
+    <h1 class="text-2xl font-bold text-gray-900">UniSZA English Roster & Timetable Automation</h1>
+    <p class="text-sm text-gray-500">Automated student allocation, official attendance sheet export, and interactive workload search.</p>
+   </div>
+   <div class="flex items-center gap-3">
+    <button @click="openSummaryModal = true" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow transition flex items-center gap-2">
+     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+     Interactive Workload & Search Summary
+    </button>
+    <div class="flex bg-gray-200 p-1 rounded-xl">
+     <button @click="switchLevel('degree')" :class="level === 'degree' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Degree</button>
+     <button @click="switchLevel('diploma')" :class="level === 'diploma' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="px-4 py-2 rounded-lg text-sm transition">Diploma</button>
+    </div>
+   </div>
+  </div>
 
-        <!-- Filters Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Select Lecturer</label>
-                <select x-model="selectedLecturer" @change="applyLecturerFilter" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Lecturers / Manual Filter</option>
-                    <template x-for="lect in lecturers" :key="lect">
-                        <option :value="lect" x-text="lect"></option>
-                    </template>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Course</label>
-                <select x-model="selectedCourse" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Courses (<span x-text="level.toUpperCase()"></span>)</option>
-                    <template x-for="course in availableCourses" :key="course">
-                        <option :value="course" x-text="course"></option>
-                    </template>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Program</label>
-                <select x-model="selectedProgram" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="">All Programs</option>
-                    <template x-for="prog in programs" :key="prog">
-                        <option :value="prog" x-text="prog"></option>
-                    </template>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Search Student</label>
-                <input type="text" x-model="searchQuery" placeholder="Name or Matrix No..." class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
-            </div>
-        </div>
+  <!-- Filters Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+   <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Select Lecturer</label>
+    <select x-model="selectedLecturer" @change="applyLecturerFilter" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+     <option value="">All Lecturers / Manual Filter</option>
+     <template x-for="lect in lecturers" :key="lect">
+      <option :value="lect" x-text="lect"></option>
+     </template>
+    </select>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Course</label>
+    <select x-model="selectedCourse" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+     <option value="">All Courses (<span x-text="level.toUpperCase()"></span>)</option>
+     <template x-for="course in availableCourses" :key="course">
+      <option :value="course" x-text="course"></option>
+     </template>
+    </select>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Program</label>
+    <select x-model="selectedProgram" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+     <option value="">All Programs</option>
+     <template x-for="prog in programs" :key="prog">
+      <option :value="prog" x-text="prog"></option>
+     </template>
+    </select>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Filter Intake</label>
+    <select x-model="selectedIntake" class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+     <option value="">All Intakes</option>
+     <option value="1">Intake 1 Only</option>
+     <option value="2">Intake 2 Only (New)</option>
+    </select>
+   </div>
+   <div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Search Student</label>
+    <input type="text" x-model="searchQuery" placeholder="Name or Matrix No..." class="w-full rounded-lg border-gray-300 border p-2 text-sm focus:ring-2 focus:ring-blue-500">
+   </div>
+  </div>
 
-        <!-- Meta Bar / Stats & Individual Group Exports -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-900 gap-3">
-            <div>
-                Showing <span class="font-bold" x-text="filteredStudents.length"></span> students out of <span x-text="students.length"></span> total records.
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <template x-if="selectedLecturer && selectedCourse">
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <span class="text-xs font-semibold text-blue-800">Export Attendance Sheet:</span>
-                        <template x-for="(groups, secId) in timetableData[selectedLecturer][selectedCourse]" :key="secId">
-                            <button @click="exportAttendanceExcel(selectedLecturer, selectedCourse, secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
-                            </button>
-                        </template>
-                    </div>
-                </template>
-                <button @click="exportCSV" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow transition">
-                    Export Current View (CSV)
-                </button>
-            </div>
-        </div>
+  <!-- Meta Bar / Stats & Individual Group Exports -->
+  <div class="flex flex-col md:flex-row justify-between items-center mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-900 gap-3">
+   <div class="flex flex-wrap items-center gap-2">
+    <span>Showing <strong x-text="filteredStudents.length"></strong> students out of <span x-text="students.length"></span> total records.</span>
+    <template x-if="intake2Count > 0">
+     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900" x-text="`+${intake2Count} from Intake 2`"></span>
+    </template>
+   </div>
+   <div class="flex flex-wrap gap-2">
+    <template x-if="selectedLecturer && selectedCourse">
+     <div class="flex flex-wrap gap-2 items-center">
+      <span class="text-xs font-semibold text-blue-800">Export Attendance Sheet:</span>
+      <template x-for="(groups, secId) in timetableData[selectedLecturer][selectedCourse]" :key="secId">
+       <button @click="exportAttendanceExcel(selectedLecturer, selectedCourse, secId, groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow transition" x-text="`Sec ${secId} (${groups.join(', ')})`">
+       </button>
+      </template>
+     </div>
+    </template>
+    <button @click="exportCSV" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow transition">
+     Export Current View (CSV)
+    </button>
+   </div>
+  </div>
 
-        <!-- Data Table -->
-        <div class="overflow-x-auto border rounded-xl">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Matrix No</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Program / Faculty</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase" x-text="level === 'degree' ? 'MUET' : 'CEFRSAH'"></th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Assigned Course</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
-                    <template x-for="student in filteredStudents" :key="student.NOPEL">
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-500" x-text="student.RN"></td>
-                            <td class="px-4 py-3 text-sm font-mono text-gray-700" x-text="student.NOPEL"></td>
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="student.NAMAPEL"></td>
-                            <td class="px-4 py-3 text-sm text-gray-500">
-                                <div class="font-medium text-gray-800" x-text="student.PROGRAM"></div>
-                                <div class="text-xs text-gray-400" x-text="student.FAKULTI"></div>
-                            </td>
-                            <td class="px-4 py-3 text-sm font-bold text-gray-700" x-text="level === 'degree' ? student.MUET : student.CEFRSAH"></td>
-                            <td class="px-4 py-3 text-sm font-semibold text-blue-600" x-text="student.assignedCourse"></td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
+  <!-- Data Table -->
+  <div class="overflow-x-auto border rounded-xl">
+   <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+     <tr>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">No</th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Matrix No</th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student Name</th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Program / Faculty</th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase" x-text="level === 'degree' ? 'MUET' : 'CEFRSAH'"></th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Assigned Course</th>
+      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Intake</th>
+     </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 bg-white">
+     <template x-for="student in filteredStudents" :key="student.NOPEL">
+      <tr :class="student.intake === 2 ? 'bg-amber-50 hover:bg-amber-100/70' : 'hover:bg-gray-50'">
+       <td class="px-4 py-3 text-sm text-gray-500" x-text="student.RN"></td>
+       <td class="px-4 py-3 text-sm font-mono text-gray-700 whitespace-nowrap">
+        <span x-text="student.NOPEL"></span>
+        <template x-if="student.intake === 2">
+         <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 uppercase">New</span>
+        </template>
+       </td>
+       <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="student.NAMAPEL"></td>
+       <td class="px-4 py-3 text-sm text-gray-500">
+        <div class="font-medium text-gray-800" x-text="student.PROGRAM"></div>
+        <div class="text-xs text-gray-400" x-text="student.FAKULTI"></div>
+       </td>
+       <td class="px-4 py-3 text-sm font-bold text-gray-700" x-text="level === 'degree' ? student.MUET : student.CEFRSAH"></td>
+       <td class="px-4 py-3 text-sm font-semibold text-blue-600" x-text="student.assignedCourse"></td>
+       <td class="px-4 py-3 text-sm whitespace-nowrap">
+        <template x-if="student.intake === 2">
+         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">Intake 2</span>
+        </template>
+        <template x-if="student.intake !== 2">
+         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-500 bg-gray-100">Intake 1</span>
+        </template>
+       </td>
+      </tr>
+     </template>
+    </tbody>
+   </table>
+  </div>
 
-        <!-- Interactive Summary Modal -->
-        <div x-show="openSummaryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" style="display: none;">
-            <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
-                    <h3 class="text-lg font-bold" x-text="`Workload & Assignment Search (${level.toUpperCase()})`"></h3>
-                    <button @click="openSummaryModal = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
-                </div>
-                
-                <!-- Search & Mode Switcher Bar -->
-                <div class="p-4 bg-gray-100 border-b flex flex-col md:flex-row gap-3 items-center justify-between">
-                    <div class="flex bg-gray-200 p-1 rounded-xl w-full md:w-auto">
-                        <button @click="summaryMode = 'teacher'" :class="summaryMode === 'teacher' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Teacher</button>
-                        <button @click="summaryMode = 'group'" :class="summaryMode === 'group' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Group</button>
-                    </div>
-                    <div class="w-full md:w-72">
-                        <input type="text" x-model="summarySearchQuery" :placeholder="summaryMode === 'teacher' ? 'Type teacher name...' : 'Type group (e.g. BEN1E)...'" class="w-full rounded-lg border-gray-300 border p-2 text-xs focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <!-- Modal Content Area -->
-                <div class="p-6 overflow-y-auto space-y-4">
-                    
-                    <!-- MODE 1: SEARCH BY TEACHER -->
-                    <template x-if="summaryMode === 'teacher'">
-                        <div class="space-y-4">
-                            <template x-for="(coursesObj, lectName) in filteredTeacherSummary" :key="lectName">
-                                <div class="border rounded-xl p-4 bg-gray-50 shadow-sm">
-                                    <div class="flex justify-between items-center mb-3 pb-2 border-b">
-                                        <h4 class="font-bold text-gray-900 text-base" x-text="lectName"></h4>
-                                        <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" x-text="`${Object.keys(coursesObj).length} Course(s)`"></span>
-                                    </div>
-                                    <div class="space-y-3">
-                                        <template x-for="(sectionsObj, courseCode) in coursesObj" :key="courseCode">
-                                            <div class="bg-white p-3 rounded-lg border space-y-2">
-                                                <div class="text-xs font-bold uppercase text-blue-600 tracking-wider" x-text="courseCode"></div>
-                                                <div class="space-y-2">
-                                                    <template x-for="(info, secId) in sectionsObj" :key="secId">
-                                                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-2.5 rounded border gap-2">
-                                                            <div>
-                                                                <span class="text-xs font-semibold text-gray-500 mr-2" x-text="`Sec ${secId}:`"></span>
-                                                                <span class="font-bold text-gray-800 text-sm" x-text="info.groups.join(', ')"></span>
-                                                            </div>
-                                                            <button @click="exportAttendanceExcel(lectName, courseCode, secId, info.groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer" title="Download official attendance sheet">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                                                <span x-text="`${info.studentCount} Students (Attendance Form)`"></span>
-                                                            </button>
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- MODE 2: SEARCH BY GROUP -->
-                    <template x-if="summaryMode === 'group'">
-                        <div class="space-y-3">
-                            <template x-for="item in filteredTableGroupSummary" :key="item.groupName + item.courseCode">
-                                <div class="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded" x-text="item.courseCode"></span>
-                                            <span class="font-bold text-gray-900 text-base" x-text="item.groupName"></span>
-                                            <span class="text-xs text-gray-400" x-text="`(Sec ${item.secId})`"></span>
-                                        </div>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            <span class="font-medium text-gray-700">Assigned Teacher:</span> 
-                                            <span class="font-semibold text-blue-700" x-text="item.teacher"></span>
-                                        </div>
-                                    </div>
-                                    <button @click="exportAttendanceExcel(item.teacher, item.courseCode, item.secId, [item.groupName])" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        <span x-text="`${item.studentCount} Students (Attendance Form)`"></span>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                </div>
-                <div class="p-4 bg-gray-100 flex justify-end">
-                    <button @click="openSummaryModal = false" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">Close Summary</button>
-                </div>
-            </div>
-        </div>
-
+  <!-- Interactive Summary Modal -->
+  <div x-show="openSummaryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" style="display: none;">
+   <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
+     <h3 class="text-lg font-bold" x-text="`Workload & Assignment Search (${level.toUpperCase()})`"></h3>
+     <button @click="openSummaryModal = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+    </div>
+    
+    <!-- Search & Mode Switcher Bar -->
+    <div class="p-4 bg-gray-100 border-b flex flex-col md:flex-row gap-3 items-center justify-between">
+     <div class="flex bg-gray-200 p-1 rounded-xl w-full md:w-auto">
+      <button @click="summaryMode = 'teacher'" :class="summaryMode === 'teacher' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Teacher</button>
+      <button @click="summaryMode = 'group'" :class="summaryMode === 'group' ? 'bg-white shadow text-blue-600 font-semibold' : 'text-gray-600'" class="flex-1 px-4 py-1.5 rounded-lg text-xs transition">Search by Group</button>
+     </div>
+     <div class="w-full md:w-72">
+      <input type="text" x-model="summarySearchQuery" :placeholder="summaryMode === 'teacher' ? 'Type teacher name...' : 'Type group (e.g. BEN1E)...'" class="w-full rounded-lg border-gray-300 border p-2 text-xs focus:ring-2 focus:ring-blue-500">
+     </div>
     </div>
 
-    <script>
-        const programMap = {
-            "BEN": "SARJANA MUDA BAHASA INGGERIS DENGAN KOMUNIKASI (KEPUJIAN)",
-            "SMBIOMED": "SARJANA MUDA SAINS BIOPERUBATAN DENGAN KEPUJIAN",
-            "SMLAW": "IJAZAH SARJANA MUDA UNDANG-UNDANG DENGAN KEPUJIAN",
-            "BAC": "SARJANA MUDA PERAKAUNAN DENGAN KEPUJIAN",
-            "SMNUTRI": "SARJANA MUDA SAINS PEMAKANAN (KEPUJIAN)",
-            "SMDIET": "SARJANA MUDA DIETETIK (KEPUJIAN)",
-            "SMUSU": "SARJANA MUDA PENGAJIAN ISLAM (USULUDDIN) DENGAN KEPUJIAN",
-            "ISMPI": "IJAZAH SARJANA MUDA PENDIDIKAN (PENDIDIKAN ISLAM) DENGAN KEPUJIAN",
-            "BBARMT": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (PENGURUSAN RISIKO DAN TAKAFUL) DENGAN KEPUJIAN",
-            "SMKS": "IJAZAH SARJANA MUDA KERJA SOSIAL DENGAN KEPUJIAN",
-            "SMSSD": "SARJANA MUDA SAINS SOSIAL ANTROPOLOGI DENGAN DAKWAH (KEPUJIAN)",
-            "BAM": "SARJANA MUDA BAHASA MELAYU KONTEMPORARI DENGAN MEDIA INTERAKTIF (KEPUJIAN)",
-            "BPR": "SARJANA MUDA PERHUBUNGAN AWAM DENGAN MEDIA KONTEMPORARI (KEPUJIAN)",
-            "BBAIF": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (KEWANGAN ISLAM) DENGAN KEPUJIAN",
-            "SMFARMASI": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
-            "SMTM": "SARJANA MUDA TEKNOLOGI MAKANAN DENGAN KEPUJIAN",
-            "SMPI": "SARJANA MUDA PELANCONGAN ISLAM DENGAN KEPUJIAN",
-            "SMAB": "SARJANA MUDA AGROBIOTEKNOLOGI DENGAN KEPUJIAN",
-            "SMA": "SARJANA MUDA AGRONOMI DENGAN KEPUJIAN",
-            "SMQIRAAT": "SARJANA MUDA AL-QURAN DAN AL-SUNNAH (QIRAAT) DENGAN KEPUJIAN",
-            "SMF": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
-            "SMIR": "SARJANA MUDA HUBUNGAN ANTARABANGSA DENGAN KEPUJIAN",
-            "SMPMH": "SARJANA MUDA PEMBANGUNAN MAKANAN HALAL DENGAN KEPUJIAN",
-            "BAS": "SARJANA MUDA PENGAJIAN BAHASA ARAB DENGAN KEPUJIAN",
-            "SMDAK": "SARJANA MUDA PENGAJIAN ISLAM (DAKWAH) DENGAN KEPUJIAN",
-            "SMSYA": "SARJANA MUDA PENGAJIAN ISLAM (SYARIAH) DENGAN KEPUJIAN",
-            "SMIMAGE": "SARJANA MUDA PENGIMEJAN PERUBATAN (KEPUJIAN)",
-            "BIWM": "SARJANA MUDA PENGURUSAN KEKAYAAN ISLAM DENGAN KEPUJIAN",
-            "SMPT": "SARJANA MUDA PERNIAGAANTANI DENGAN KEPUJIAN",
-            "MBBS": "SARJANA MUDA PERUBATAN DAN PEMBEDAHAN",
-            "SMPKH": "SARJANA MUDA PRODUKSI DAN KESIHATAN HAIWAN DENGAN KEPUJIAN",
-            "SMSA": "SARJANA MUDA SAINS AKUATIK DENGAN KEPUJIAN",
-            "SMNURSING": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
-            "SMNURS": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
-            "SMSKKRK": "SARJANA MUDA SAINS KOMPUTER (KESELAMATAN RANGKAIAN KOMPUTER) DENGAN KEPUJIAN",
-            "SMSKKI": "SARJANA MUDA SAINS KOMPUTER (KOMPUTERAN INTERNET) DENGAN KEPUJIAN",
-            "SMSKPP": "SARJANA MUDA SAINS KOMPUTER (PEMBANGUNAN PERISIAN) DENGAN KEPUJIAN",
-            "BMHS": "SARJANA MUDA SAINS PERUBATAN DAN KESIHATAN DENGAN KEPUJIAN",
-            "SMSSP": "SARJANA MUDA SAINS SOSIAL PERSEKITARAN DENGAN KEPUJIAN",
-            "SMRP": "SARJANA MUDA SENI (REKA BENTUK PERINDUSTRIAN) DENGAN KEPUJIAN",
-            "SMTP": "SARJANA MUDA TEKNOLOGI KEJURUTERAAN PEMBUATAN (REKA BENTUK PRODUK) DENGAN KEPUJIAN",
-            "SMTMIM": "SARJANA MUDA TEKNOLOGI MAKLUMAT (INFORMATIK MEDIA) DENGAN KEPUJIAN",
-            "SMTPT": "SARJANA MUDA TEKNOLOGI PEMBIAKBAKAAN TUMBUHAN DENGAN KEPUJIAN",
-            "SMTPr": "SARJANA MUDA TEKNOLOGI POLIMER DENGAN KEPUJIAN",
-            "SMUSUK": "SARJANA MUDA USULUDDIN DENGAN KAUNSELING (KEPUJIAN)",
-            "DTM": "DIPLOMA TEKNOLOGI MAKLUMAT",
-            "DSK": "DIPLOMA SAINS KOMPUTER",
-            "DHRM": "DIPLOMA PENGURUSAN SUMBER MANUSIA",
-            "DIB": "DIPLOMA PENGAJIAN BANK",
-            "DIF": "DIPLOMA KEWANGAN",
-            "DIM": "DIPLOMA PEMASARAN",
-            "DII": "DIPLOMA PENGAJIAN INSURANS",
-            "DITB": "DIPLOMA PERNIAGAAN ANTARABANGSA",
-            "DTMP": "DIPLOMA TEKNOLOGI MAKMAL PERUBATAN",
-            "DFISIO": "DIPLOMA FISIOTERAPI",
-            "DRAD": "DIPLOMA RADIOGRAFI",
-            "DLAW": "DIPLOMA UNDANG-UNDANG",
-            "DNURS": "DIPLOMA SAINS KEJURURAWATAN",
-            "DRP": "DIPLOMA REKA BENTUK PERINDUSTRIAN",
-            "DTP": "DIPLOMA TEKNOLOGI PEMBUATAN",
-            "DIA": "DIPLOMA PERAKAUNAN",
-            "DQWS": "DIPLOMA AL-QURAN DAN AS-SUNNAH",
-            "DSYA": "DIPLOMA SYARIAH",
-            "DUSU": "DIPLOMA USULUDDIN",
-            "DPTI": "DIPLOMA PENTADBIRAN ISLAM",
-            "DBAH": "DIPLOMA BAHASA DAN KESUSASTERAAN ARAB",
-            "DDAK": "DIPLOMA DAKWAH",
-            "DMPI": "DIPLOMA MEDIA PENYIARAN ISLAM",
-            "DSTI": "DIPLOMA SEJARAH DAN TAMADUN ISLAM"
-        };
+    <!-- Modal Content Area -->
+    <div class="p-6 overflow-y-auto space-y-4">
+     
+      <!-- MODE 1: SEARCH BY TEACHER -->
+      <template x-if="summaryMode === 'teacher'">
+       <div class="space-y-4">
+        <template x-for="(coursesObj, lectName) in filteredTeacherSummary" :key="lectName">
+         <div class="border rounded-xl p-4 bg-gray-50 shadow-sm">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b">
+           <h4 class="font-bold text-gray-900 text-base" x-text="lectName"></h4>
+           <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" x-text="`${Object.keys(coursesObj).length} Course(s)`"></span>
+          </div>
+          <div class="space-y-3">
+           <template x-for="(sectionsObj, courseCode) in coursesObj" :key="courseCode">
+            <div class="bg-white p-3 rounded-lg border space-y-2">
+             <div class="text-xs font-bold uppercase text-blue-600 tracking-wider" x-text="courseCode"></div>
+             <div class="space-y-2">
+              <template x-for="(info, secId) in sectionsObj" :key="secId">
+               <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-2.5 rounded border gap-2">
+                <div>
+                 <span class="text-xs font-semibold text-gray-500 mr-2" x-text="`Sec ${secId}:`"></span>
+                 <span class="font-bold text-gray-800 text-sm" x-text="info.groups.join(', ')"></span>
+                 <template x-if="info.intake2Count > 0">
+                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800" x-text="`+${info.intake2Count} Intake 2`"></span>
+                 </template>
+                </div>
+                <button @click="exportAttendanceExcel(lectName, courseCode, secId, info.groups)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer" title="Download official attendance sheet">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                 <span x-text="`${info.studentCount} Students (Attendance Form)`"></span>
+                </button>
+               </div>
+              </template>
+             </div>
+            </div>
+           </template>
+          </div>
+         </div>
+        </template>
+       </div>
+      </template>
 
-        function rosterApp() {
-            return {
-                level: 'degree',
-                students: [],
-                lecturers: [],
-                timetableData: {},
-                tableTimetableData: {},
-                selectedLecturer: '',
-                selectedCourse: '',
-                selectedProgram: '',
-                searchQuery: '',
-                openSummaryModal: false,
-                summaryMode: 'teacher',
-                summarySearchQuery: '',
-                
-                async init() {
-                    await this.loadTimetable();
-                    this.loadData();
-                },
+      <!-- MODE 2: SEARCH BY GROUP -->
+      <template x-if="summaryMode === 'group'">
+       <div class="space-y-3">
+        <template x-for="item in filteredTableGroupSummary" :key="item.groupName + item.courseCode">
+         <div class="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+           <div class="flex items-center gap-2">
+            <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded" x-text="item.courseCode"></span>
+            <span class="font-bold text-gray-900 text-base" x-text="item.groupName"></span>
+            <span class="text-xs text-gray-400" x-text="`(Sec ${item.secId})`"></span>
+            <template x-if="item.intake2Count > 0">
+             <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800" x-text="`+${item.intake2Count} Intake 2`"></span>
+            </template>
+           </div>
+           <div class="text-xs text-gray-500 mt-1">
+            <span class="font-medium text-gray-700">Assigned Teacher:</span> 
+            <span class="font-semibold text-blue-700" x-text="item.teacher"></span>
+           </div>
+          </div>
+          <button @click="exportAttendanceExcel(item.teacher, item.courseCode, item.secId, [item.groupName])" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+           <span x-text="`${item.studentCount} Students (Attendance Form)`"></span>
+          </button>
+         </div>
+        </template>
+       </div>
+      </template>
 
-                async loadTimetable() {
-                    try {
-                        let res = await fetch('timetable-mapping.json');
-                        this.timetableData = await res.json();
-                        this.lecturers = Object.keys(this.timetableData).sort();
+    </div>
+    <div class="p-4 bg-gray-100 flex justify-end">
+     <button @click="openSummaryModal = false" class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-xl text-sm font-medium transition">Close Summary</button>
+    </div>
+   </div>
+  </div>
 
-                        let resTable = await fetch('timetable-table-mapping.json');
-                        this.tableTimetableData = await resTable.json();
-                    } catch(e) {
-                        console.error("Timetable mapping JSONs not found.", e);
-                    }
-                },
+ </div>
 
-                switchLevel(lvl) {
-                    this.level = lvl;
-                    this.selectedCourse = '';
-                    this.selectedLecturer = '';
-                    this.selectedProgram = '';
-                    this.searchQuery = '';
-                    this.loadData();
-                },
+ <script>
+ const programMap = {
+   "BEN": "SARJANA MUDA BAHASA INGGERIS DENGAN KOMUNIKASI (KEPUJIAN)",
+   "SMBIOMED": "SARJANA MUDA SAINS BIOPERUBATAN DENGAN KEPUJIAN",
+   "SMLAW": "IJAZAH SARJANA MUDA UNDANG-UNDANG DENGAN KEPUJIAN",
+   "BAC": "SARJANA MUDA PERAKAUNAN DENGAN KEPUJIAN",
+   "SMNUTRI": "SARJANA MUDA SAINS PEMAKANAN (KEPUJIAN)",
+   "SMDIET": "SARJANA MUDA DIETETIK (KEPUJIAN)",
+   "SMUSU": "SARJANA MUDA PENGAJIAN ISLAM (USULUDDIN) DENGAN KEPUJIAN",
+   "ISMPI": "IJAZAH SARJANA MUDA PENDIDIKAN (PENDIDIKAN ISLAM) DENGAN KEPUJIAN",
+   "BBARMT": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (PENGURUSAN RISIKO DAN TAKAFUL) DENGAN KEPUJIAN",
+   "SMKS": "IJAZAH SARJANA MUDA KERJA SOSIAL DENGAN KEPUJIAN",
+   "SMSSD": "SARJANA MUDA SAINS SOSIAL ANTROPOLOGI DENGAN DAKWAH (KEPUJIAN)",
+   "BAM": "SARJANA MUDA BAHASA MELAYU KONTEMPORARI DENGAN MEDIA INTERAKTIF (KEPUJIAN)",
+   "BPR": "SARJANA MUDA PERHUBUNGAN AWAM DENGAN MEDIA KONTEMPORARI (KEPUJIAN)",
+   "BBAIF": "SARJANA MUDA PENTADBIRAN PERNIAGAAN (KEWANGAN ISLAM) DENGAN KEPUJIAN",
+   "SMFARMASI": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
+   "SMTM": "SARJANA MUDA TEKNOLOGI MAKANAN DENGAN KEPUJIAN",
+   "SMPI": "SARJANA MUDA PELANCONGAN ISLAM DENGAN KEPUJIAN",
+   "SMAB": "SARJANA MUDA AGROBIOTEKNOLOGI DENGAN KEPUJIAN",
+   "SMA": "SARJANA MUDA AGRONOMI DENGAN KEPUJIAN",
+   "SMQIRAAT": "SARJANA MUDA AL-QURAN DAN AL-SUNNAH (QIRAAT) DENGAN KEPUJIAN",
+   "SMF": "SARJANA MUDA FARMASI DENGAN KEPUJIAN",
+   "SMIR": "SARJANA MUDA HUBUNGAN ANTARABANGSA DENGAN KEPUJIAN",
+   "SMPMH": "SARJANA MUDA PEMBANGUNAN MAKANAN HALAL DENGAN KEPUJIAN",
+   "BAS": "SARJANA MUDA PENGAJIAN BAHASA ARAB DENGAN KEPUJIAN",
+   "SMDAK": "SARJANA MUDA PENGAJIAN ISLAM (DAKWAH) DENGAN KEPUJIAN",
+   "SMSYA": "SARJANA MUDA PENGAJIAN ISLAM (SYARIAH) DENGAN KEPUJIAN",
+   "SMIMAGE": "SARJANA MUDA PENGIMEJAN PERUBATAN (KEPUJIAN)",
+   "BIWM": "SARJANA MUDA PENGURUSAN KEKAYAAN ISLAM DENGAN KEPUJIAN",
+   "SMPT": "SARJANA MUDA PERNIAGAANTANI DENGAN KEPUJIAN",
+   "MBBS": "SARJANA MUDA PERUBATAN DAN PEMBEDAHAN",
+   "SMPKH": "SARJANA MUDA PRODUKSI DAN KESIHATAN HAIWAN DENGAN KEPUJIAN",
+   "SMSA": "SARJANA MUDA SAINS AKUATIK DENGAN KEPUJIAN",
+   "SMNURSING": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
+   "SMNURS": "SARJANA MUDA SAINS KEJURURAWATAN (KEPUJIAN)",
+   "SMSKKRK": "SARJANA MUDA SAINS KOMPUTER (KESELAMATAN RANGKAIAN KOMPUTER) DENGAN KEPUJIAN",
+   "SMSKKI": "SARJANA MUDA SAINS KOMPUTER (KOMPUTERAN INTERNET) DENGAN KEPUJIAN",
+   "SMSKPP": "SARJANA MUDA SAINS KOMPUTER (PEMBANGUNAN PERISIAN) DENGAN KEPUJIAN",
+   "BMHS": "SARJANA MUDA SAINS PERUBATAN DAN KESIHATAN DENGAN KEPUJIAN",
+   "SMSSP": "SARJANA MUDA SAINS SOSIAL PERSEKITARAN DENGAN KEPUJIAN",
+   "SMRP": "SARJANA MUDA SENI (REKA BENTUK PERINDUSTRIAN) DENGAN KEPUJIAN",
+   "SMTP": "SARJANA MUDA TEKNOLOGI KEJURUTERAAN PEMBUATAN (REKA BENTUK PRODUK) DENGAN KEPUJIAN",
+   "SMTMIM": "SARJANA MUDA TEKNOLOGI MAKLUMAT (INFORMATIK MEDIA) DENGAN KEPUJIAN",
+   "SMTPT": "SARJANA MUDA TEKNOLOGI PEMBIAKBAKAAN TUMBUHAN DENGAN KEPUJIAN",
+   "SMTPr": "SARJANA MUDA TEKNOLOGI POLIMER DENGAN KEPUJIAN",
+   "SMUSUK": "SARJANA MUDA USULUDDIN DENGAN KAUNSELING (KEPUJIAN)",
+   "DTM": "DIPLOMA TEKNOLOGI MAKLUMAT",
+   "DSK": "DIPLOMA SAINS KOMPUTER",
+   "DHRM": "DIPLOMA PENGURUSAN SUMBER MANUSIA",
+   "DIB": "DIPLOMA PENGAJIAN BANK",
+   "DIF": "DIPLOMA KEWANGAN",
+   "DIM": "DIPLOMA PEMASARAN",
+   "DII": "DIPLOMA PENGAJIAN INSURANS",
+   "DITB": "DIPLOMA PERNIAGAAN ANTARABANGSA",
+   "DTMP": "DIPLOMA TEKNOLOGI MAKMAL PERUBATAN",
+   "DFISIO": "DIPLOMA FISIOTERAPI",
+   "DRAD": "DIPLOMA RADIOGRAFI",
+   "DLAW": "DIPLOMA UNDANG-UNDANG",
+   "DNURS": "DIPLOMA SAINS KEJURURAWATAN",
+   "DRP": "DIPLOMA REKA BENTUK PERINDUSTRIAN",
+   "DTP": "DIPLOMA TEKNOLOGI PEMBUATAN",
+   "DIA": "DIPLOMA PERAKAUNAN",
+   "DQWS": "DIPLOMA AL-QURAN DAN AS-SUNNAH",
+   "DSYA": "DIPLOMA SYARIAH",
+   "DUSU": "DIPLOMA USULUDDIN",
+   "DPTI": "DIPLOMA PENTADBIRAN ISLAM",
+   "DBAH": "DIPLOMA BAHASA DAN KESUSASTERAAN ARAB",
+   "DDAK": "DIPLOMA DAKWAH",
+   "DMPI": "DIPLOMA MEDIA PENYIARAN ISLAM",
+   "DSTI": "DIPLOMA SEJARAH DAN TAMADUN ISLAM"
+ };
 
-                loadData() {
-                    let filename = this.level === 'degree' ? 'data-degree.xlsx' : 'data-diploma.xlsx';
-                    
-                    fetch(filename)
-                        .then(res => res.arrayBuffer())
-                        .then(buf => {
-                            let workbook = XLSX.read(buf, {type: 'array'});
-                            let sheet = workbook.Sheets[workbook.SheetNames[0]];
-                            let json = XLSX.utils.sheet_to_json(sheet);
-                            
-                            this.students = json.map(s => {
-                                let course = 'Unassigned';
-                                if (this.level === 'degree') {
-                                    let m = parseFloat(s.MUET);
-                                    if (m >= 2.0 && m <= 2.5) course = 'PDC12202';
-                                    else if (m >= 3.0 && m <= 3.5) course = 'PDC12302';
-                                    else if (m >= 4.0 && m <= 5.5) course = 'PDC12402';
-                                } else {
-                                    let c = String(s.CEFRSAH || '').trim().toUpperCase();
-                                    if (c === 'A2') course = 'PBC11802';
-                                    else if (c === 'B1') course = 'PBC11902';
-                                    else if (c === 'B2' || c === 'C1') course = 'PBC12002';
-                                }
-                                return { ...s, assignedCourse: course };
-                            });
-                        });
-                },
+ function rosterApp() {
+  return {
+   level: 'degree',
+   students: [],
+   lecturers: [],
+   timetableData: {},
+   tableTimetableData: {},
+   selectedLecturer: '',
+   selectedCourse: '',
+   selectedProgram: '',
+   selectedIntake: '',
+   searchQuery: '',
+   openSummaryModal: false,
+   summaryMode: 'teacher',
+   summarySearchQuery: '',
+   
+   async init() {
+    await this.loadTimetable();
+    this.loadData();
+   },
 
-                applyLecturerFilter() {
-                    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
-                        let courses = Object.keys(this.timetableData[this.selectedLecturer]);
-                        if (courses.length > 0) {
-                            this.selectedCourse = courses[0];
-                        }
-                    }
-                },
+   async loadTimetable() {
+    try {
+     let res = await fetch('timetable-mapping.json');
+     this.timetableData = await res.json();
+     this.lecturers = Object.keys(this.timetableData).sort();
 
-                get availableCourses() {
-                    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
-                        return Object.keys(this.timetableData[this.selectedLecturer]);
-                    }
-                    return this.level === 'degree' 
-                        ? ['PDC12202', 'PDC12302', 'PDC12402'] 
-                        : ['PBC11802', 'PBC11902', 'PBC12002'];
-                },
+     let resTable = await fetch('timetable-table-mapping.json');
+     this.tableTimetableData = await resTable.json();
+    } catch(e) {
+     console.error("Timetable mapping JSONs not found.", e);
+    }
+   },
 
-                get programs() {
-                    return [...new Set(this.students.map(s => s.PROGRAM))].filter(Boolean).sort();
-                },
+   switchLevel(lvl) {
+    this.level = lvl;
+    this.selectedCourse = '';
+    this.selectedLecturer = '';
+    this.selectedProgram = '';
+    this.selectedIntake = '';
+    this.searchQuery = '';
+    this.loadData();
+   },
 
-                get teacherWorkloadSummary() {
-                    let summary = {};
-                    for (let lect in this.timetableData) {
-                        let lectCourses = {};
-                        let hasRelevantCourse = false;
-                        for (let course in this.timetableData[lect]) {
-                            if (this.level === 'degree' && !course.startsWith('PDC')) continue;
-                            if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
-                            hasRelevantCourse = true;
-                            let sections = this.timetableData[lect][course];
-                            let lectSectionsObj = {};
-                            for (let secId in sections) {
-                                let groups = sections[secId];
-                                let groupProgs = new Set();
-                                groups.forEach(g => {
-                                    let match = g.match(/^([A-Z]+)\d+/);
-                                    if (match && programMap[match[1]]) {
-                                        groupProgs.add(programMap[match[1]]);
-                                    }
-                                });
-                                let count = this.students.filter(s => {
-                                    let matchCourse = s.assignedCourse === course;
-                                    let studentProg = String(s.PROGRAM || '').trim();
-                                    let matchProg = Array.from(groupProgs).some(p => studentProg.includes(p));
-                                    return matchCourse && matchProg;
-                                }).length;
-                                lectSectionsObj[secId] = { groups: groups, studentCount: count };
-                            }
-                            lectCourses[course] = lectSectionsObj;
-                        }
-                        if (hasRelevantCourse) summary[lect] = lectCourses;
-                    }
-                    return summary;
-                },
+   loadData() {
+    let filename = this.level === 'degree' ? 'data-degree.xlsx' : 'data-diploma.xlsx';
+    
+    fetch(filename)
+     .then(res => res.arrayBuffer())
+     .then(buf => {
+      let workbook = XLSX.read(buf, {type: 'array'});
+      let sheet = workbook.Sheets[workbook.SheetNames[0]];
+      let json = XLSX.utils.sheet_to_json(sheet);
+      
+      this.students = json.map(s => {
+       let course = 'Unassigned';
+       if (this.level === 'degree') {
+        let m = parseFloat(s.MUET);
+        if (m >= 2.0 && m <= 2.5) course = 'PDC12202';
+        else if (m >= 3.0 && m <= 3.5) course = 'PDC12302';
+        else if (m >= 4.0 && m <= 5.5) course = 'PDC12402';
+       } else {
+        let c = String(s.CEFRSAH || '').trim().toUpperCase();
+        if (c === 'A2') course = 'PBC11802';
+        else if (c === 'B1') course = 'PBC11902';
+        else if (c === 'B2' || c === 'C1') course = 'PBC12002';
+       }
 
-                get filteredTeacherSummary() {
-                    let raw = this.teacherWorkloadSummary;
-                    if (!this.summarySearchQuery) return raw;
-                    let q = this.summarySearchQuery.toLowerCase();
-                    let filtered = {};
-                    for (let lect in raw) {
-                        if (lect.toLowerCase().includes(q)) filtered[lect] = raw[lect];
-                    }
-                    return filtered;
-                },
+       let rawIntake = s.INTAKE !== undefined ? String(s.INTAKE).trim() : '1';
+       let intakeNum = rawIntake.includes('2') ? 2 : 1;
 
-                get filteredTableGroupSummary() {
-                    let list = [];
-                    let src = Object.keys(this.tableTimetableData).length > 0 ? this.tableTimetableData : this.timetableData;
-                    
-                    for (let lect in src) {
-                        for (let course in src[lect]) {
-                            if (this.level === 'degree' && !course.startsWith('PDC')) continue;
-                            if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
-                            
-                            let sections = src[lect][course];
-                            for (let secId in sections) {
-                                let groups = sections[secId];
-                                groups.forEach(gName => {
-                                    let groupProgs = new Set();
-                                    let match = gName.match(/^([A-Z]+)\d+/);
-                                    if (match && programMap[match[1]]) {
-                                        groupProgs.add(programMap[match[1]]);
-                                    }
+       return { 
+        ...s, 
+        intake: intakeNum,
+        assignedCourse: course 
+       };
+      });
+     });
+   },
 
-                                    let count = this.students.filter(s => {
-                                        let matchCourse = s.assignedCourse === course;
-                                        let studentProg = String(s.PROGRAM || '').trim();
-                                        let matchProg = Array.from(groupProgs).some(p => studentProg.includes(p));
-                                        return matchCourse && matchProg;
-                                    }).length;
+   applyLecturerFilter() {
+    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
+     let courses = Object.keys(this.timetableData[this.selectedLecturer]);
+     if (courses.length > 0) {
+      this.selectedCourse = courses[0];
+     }
+    }
+   },
 
-                                    list.push({
-                                        groupName: gName,
-                                        courseCode: course,
-                                        secId: secId,
-                                        teacher: lect,
-                                        studentCount: count
-                                    });
-                                });
-                            }
-                        }
-                    }
+   get availableCourses() {
+    if (this.selectedLecturer && this.timetableData[this.selectedLecturer]) {
+     return Object.keys(this.timetableData[this.selectedLecturer]);
+    }
+    return this.level === 'degree' 
+      ? ['PDC12202', 'PDC12302', 'PDC12402'] 
+      : ['PBC11802', 'PBC11902', 'PBC12002'];
+   },
 
-                    if (!this.summarySearchQuery) return list;
-                    let q = this.summarySearchQuery.toLowerCase();
-                    return list.filter(item => 
-                        item.groupName.toLowerCase().includes(q) || 
-                        item.courseCode.toLowerCase().includes(q) ||
-                        item.teacher.toLowerCase().includes(q)
-                    );
-                },
+   get programs() {
+    return [...new Set(this.students.map(s => s.PROGRAM))].filter(Boolean).sort();
+   },
 
-                get filteredStudents() {
-                    let allowedFullPrograms = null;
-                    if (this.selectedLecturer && this.selectedCourse && this.timetableData[this.selectedLecturer]?.[this.selectedCourse]) {
-                        allowedFullPrograms = new Set();
-                        let sections = this.timetableData[this.selectedLecturer][this.selectedCourse];
-                        for (let secId in sections) {
-                            let groups = sections[secId];
-                            groups.forEach(g => {
-                                let match = g.match(/^([A-Z]+)\d+/);
-                                if (match) {
-                                    let code = match[1];
-                                    if (programMap[code]) {
-                                        allowedFullPrograms.add(programMap[code]);
-                                    }
-                                }
-                            });
-                        }
-                    }
+   get intake2Count() {
+    return this.filteredStudents.filter(s => s.intake === 2).length;
+   },
 
-                    return this.students.filter(s => {
-                        let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
-                        let matchProgram = !this.selectedProgram || s.PROGRAM === this.selectedProgram;
-                        
-                        let matchLecturerGroups = true;
-                        if (allowedFullPrograms !== null) {
-                            let studentProg = String(s.PROGRAM || '').trim();
-                            matchLecturerGroups = Array.from(allowedFullPrograms).some(p => studentProg.includes(p));
-                        }
-
-                        let matchSearch = !this.searchQuery || 
-                            s.NAMAPEL.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                            String(s.NOPEL).includes(this.searchQuery);
-                            
-                        return matchCourse && matchProgram && matchLecturerGroups && matchSearch;
-                    });
-                },
-
-                async exportAttendanceExcel(lectName, courseCode, secId, groupCodes) {
-                    let groupPrograms = new Set();
-                    groupCodes.forEach(g => {
-                        let match = g.match(/^([A-Z]+)\d+/);
-                        if (match && programMap[match[1]]) {
-                            groupPrograms.add(programMap[match[1]]);
-                        }
-                    });
-
-                    let groupStudents = this.students.filter(s => {
-                        let matchCourse = s.assignedCourse === courseCode;
-                        let studentProg = String(s.PROGRAM || '').trim();
-                        let matchProg = Array.from(groupPrograms).some(p => studentProg.includes(p));
-                        return matchCourse && matchProg;
-                    });
-
-                    // Build formal UniSZA Attendance Form structure with separate Program column
-                    let ws_data = [
-                        ["KEHADIRAN KELAS PENGAJARAN", "", "", ""],
-                        ["(UniSZA-PT01-PK01-BR002-S01)", "", "", ""],
-                        ["", "", "", ""],
-                        ["SEMESTER :", "Semester I 2026/2027", "", "MINGGU"],
-                        ["KOD KURSUS:", courseCode, "", "MASA"],
-                        ["SESI AKADEMIK :", "2026/2027", "", ""],
-                        ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", ""],
-                        ["JABATAN/PROGRAM:", groupCodes.join(", "), "", ""],
-                        ["", "", "", ""],
-                        ["BIL.", "NO. MATRIK", "NAMA", "PROGRAM"]
-                    ];
-
-                    groupStudents.forEach((s, index) => {
-                        ws_data.push([index + 1, String(s.NOPEL), s.NAMAPEL, s.PROGRAM || ""]);
-                    });
-
-                    // Add footer sign-off rows
-                    ws_data.push([]);
-                    ws_data.push(["(UNTUK TINDAKAN PENSYARAH - PERAKU PELAKSANAAN KELAS DAN SIMPAN BORANG DALAM FAIL KURSUS)", "", "", ""]);
-                    ws_data.push(["DIPERAKUKAN KELAS PENGAJARAN DI ATAS TELAH DILAKSANAKAN", "", "", ""]);
-                    ws_data.push(["TANDATANGAN", ":", "", ""]);
-                    ws_data.push(["NAMA/COP RASMI", ": " + lectName, "", ""]);
-                    ws_data.push(["TARIKH", ":", "", ""]);
-
-                    let wb = XLSX.utils.book_new();
-                    let ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-                    // Column widths
-                    ws['!cols'] = [
-                        {wch: 6},  // BIL
-                        {wch: 15}, // NO MATRIK
-                        {wch: 40}, // NAMA
-                        {wch: 55}  // PROGRAM (separate dedicated column)
-                    ];
-
-                    XLSX.utils.book_append_sheet(wb, ws, "Kehadiran");
-                    XLSX.writeFile(wb, `${lectName}_${courseCode}_Sec${secId}_Attendance.xlsx`);
-                },
-
-                exportCSV() {
-                    let headers = ["No", "Matrix No", "Student Name", "Program", "Faculty", this.level === 'degree' ? "MUET" : "CEFRSAH", "Assigned Course"];
-                    let rows = this.filteredStudents.map(s => [
-                        s.RN, s.NOPEL, `"${s.NAMAPEL}"`, `"${s.PROGRAM}"`, `"${s.FAKULTI}"`, 
-                        this.level === 'degree' ? s.MUET : s.CEFRSAH, s.assignedCourse
-                    ]);
-                    
-                    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-                    let encodedUri = encodeURI(csvContent);
-                    let link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `UniSZA_${this.selectedLecturer || this.level}_Roster.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            }
+   get teacherWorkloadSummary() {
+    let summary = {};
+    for (let lect in this.timetableData) {
+     let lectCourses = {};
+     let hasRelevantCourse = false;
+     for (let course in this.timetableData[lect]) {
+      if (this.level === 'degree' && !course.startsWith('PDC')) continue;
+      if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
+      hasRelevantCourse = true;
+      let sections = this.timetableData[lect][course];
+      let lectSectionsObj = {};
+      for (let secId in sections) {
+       let groups = sections[secId];
+       let groupProgs = new Set();
+       groups.forEach(g => {
+        let match = g.match(/^([A-Z]+)\d+/);
+        if (match && programMap[match[1]]) {
+         groupProgs.add(programMap[match[1]]);
         }
-    </script>
+       });
+       let matched = this.students.filter(s => {
+        let matchCourse = s.assignedCourse === course;
+        let studentProg = String(s.PROGRAM || '').trim();
+        let matchProg = Array.from(groupProgs).some(p => studentProg.includes(p));
+        return matchCourse && matchProg;
+       });
+       let count = matched.length;
+       let intake2Count = matched.filter(s => s.intake === 2).length;
+       lectSectionsObj[secId] = { groups: groups, studentCount: count, intake2Count: intake2Count };
+      }
+      lectCourses[course] = lectSectionsObj;
+     }
+     if (hasRelevantCourse) summary[lect] = lectCourses;
+    }
+    return summary;
+   },
+
+   get filteredTeacherSummary() {
+    let raw = this.teacherWorkloadSummary;
+    if (!this.summarySearchQuery) return raw;
+    let q = this.summarySearchQuery.toLowerCase();
+    let filtered = {};
+    for (let lect in raw) {
+     if (lect.toLowerCase().includes(q)) filtered[lect] = raw[lect];
+    }
+    return filtered;
+   },
+
+   get filteredTableGroupSummary() {
+    let list = [];
+    let src = Object.keys(this.tableTimetableData).length > 0 ? this.tableTimetableData : this.timetableData;
+    
+    for (let lect in src) {
+     for (let course in src[lect]) {
+      if (this.level === 'degree' && !course.startsWith('PDC')) continue;
+      if (this.level === 'diploma' && !course.startsWith('PBC')) continue;
+      
+      let sections = src[lect][course];
+      for (let secId in sections) {
+       let groups = sections[secId];
+       groups.forEach(gName => {
+        let groupProgs = new Set();
+        let match = gName.match(/^([A-Z]+)\d+/);
+        if (match && programMap[match[1]]) {
+         groupProgs.add(programMap[match[1]]);
+        }
+
+        let matched = this.students.filter(s => {
+         let matchCourse = s.assignedCourse === course;
+         let studentProg = String(s.PROGRAM || '').trim();
+         let matchProg = Array.from(groupProgs).some(p => studentProg.includes(p));
+         return matchCourse && matchProg;
+        });
+        let count = matched.length;
+        let intake2Count = matched.filter(s => s.intake === 2).length;
+
+        list.push({
+         groupName: gName,
+         courseCode: course,
+         secId: secId,
+         teacher: lect,
+         studentCount: count,
+         intake2Count: intake2Count
+        });
+       });
+      }
+     }
+    }
+
+    if (!this.summarySearchQuery) return list;
+    let q = this.summarySearchQuery.toLowerCase();
+    return list.filter(item => 
+      item.groupName.toLowerCase().includes(q) || 
+      item.courseCode.toLowerCase().includes(q) ||
+      item.teacher.toLowerCase().includes(q)
+    );
+   },
+
+   get filteredStudents() {
+    let allowedFullPrograms = null;
+    if (this.selectedLecturer && this.selectedCourse && this.timetableData[this.selectedLecturer]?.[this.selectedCourse]) {
+     allowedFullPrograms = new Set();
+     let sections = this.timetableData[this.selectedLecturer][this.selectedCourse];
+     for (let secId in sections) {
+      let groups = sections[secId];
+      groups.forEach(g => {
+       let match = g.match(/^([A-Z]+)\d+/);
+       if (match) {
+        let code = match[1];
+        if (programMap[code]) {
+         allowedFullPrograms.add(programMap[code]);
+        }
+       }
+      });
+     }
+    }
+
+    return this.students.filter(s => {
+     let matchCourse = !this.selectedCourse || s.assignedCourse === this.selectedCourse;
+     let matchProgram = !this.selectedProgram || s.PROGRAM === this.selectedProgram;
+     let matchIntake = !this.selectedIntake || String(s.intake) === String(this.selectedIntake);
+     
+     let matchLecturerGroups = true;
+     if (allowedFullPrograms !== null) {
+      let studentProg = String(s.PROGRAM || '').trim();
+      matchLecturerGroups = Array.from(allowedFullPrograms).some(p => studentProg.includes(p));
+     }
+
+     let matchSearch = !this.searchQuery || 
+       s.NAMAPEL.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+       String(s.NOPEL).includes(this.searchQuery);
+     
+     return matchCourse && matchProgram && matchIntake && matchLecturerGroups && matchSearch;
+    });
+   },
+
+   async exportAttendanceExcel(lectName, courseCode, secId, groupCodes) {
+    let groupPrograms = new Set();
+    groupCodes.forEach(g => {
+     let match = g.match(/^([A-Z]+)\d+/);
+     if (match && programMap[match[1]]) {
+      groupPrograms.add(programMap[match[1]]);
+     }
+    });
+
+    let groupStudents = this.students.filter(s => {
+     let matchCourse = s.assignedCourse === courseCode;
+     let studentProg = String(s.PROGRAM || '').trim();
+     let matchProg = Array.from(groupPrograms).some(p => studentProg.includes(p));
+     return matchCourse && matchProg;
+    });
+
+    // Build formal UniSZA Attendance Form structure with separate Program and Intake columns
+    let ws_data = [
+      ["KEHADIRAN KELAS PENGAJARAN", "", "", "", ""],
+      ["(UniSZA-PT01-PK01-BR002-S01)", "", "", "", ""],
+      ["", "", "", "", ""],
+      ["SEMESTER :", "Semester I 2026/2027", "", "MINGGU", ""],
+      ["KOD KURSUS:", courseCode, "", "MASA", ""],
+      ["SESI AKADEMIK :", "2026/2027", "", "", ""],
+      ["TAJUK KURSUS:", courseCode.startsWith("PDC") ? "ENGLISH COMPETENCY" : "ENGLISH PROFICIENCY", "", "", ""],
+      ["JABATAN/PROGRAM:", groupCodes.join(", "), "", "", ""],
+      ["", "", "", "", ""],
+      ["BIL.", "NO. MATRIK", "NAMA", "PROGRAM", "INTAKE"]
+    ];
+
+    groupStudents.forEach((s, index) => {
+     ws_data.push([index + 1, String(s.NOPEL), s.NAMAPEL, s.PROGRAM || "", s.intake === 2 ? "Intake 2 (New)" : "Intake 1"]);
+    });
+
+    // Add footer sign-off rows
+    ws_data.push([]);
+    ws_data.push(["(UNTUK TINDAKAN PENSYARAH - PERAKU PELAKSANAAN KELAS DAN SIMPAN BORANG DALAM FAIL KURSUS)", "", "", "", ""]);
+    ws_data.push(["DIPERAKUKAN KELAS PENGAJARAN DI ATAS TELAH DILAKSANAKAN", "", "", "", ""]);
+    ws_data.push(["TANDATANGAN", ":", "", "", ""]);
+    ws_data.push(["NAMA/COP RASMI", ": " + lectName, "", "", ""]);
+    ws_data.push(["TARIKH", ":", "", "", ""]);
+
+    let wb = XLSX.utils.book_new();
+    let ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+    // Column widths
+    ws['!cols'] = [
+      {wch: 6},  // BIL
+      {wch: 15}, // NO MATRIK
+      {wch: 40}, // NAMA
+      {wch: 55}, // PROGRAM
+      {wch: 18}  // INTAKE
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Kehadiran");
+    XLSX.writeFile(wb, `${lectName}_${courseCode}_Sec${secId}_Attendance.xlsx`);
+   },
+
+   exportCSV() {
+    let headers = ["No", "Matrix No", "Student Name", "Program", "Faculty", this.level === 'degree' ? "MUET" : "CEFRSAH", "Assigned Course", "Intake"];
+    let rows = this.filteredStudents.map(s => [
+      s.RN, s.NOPEL, `"${s.NAMAPEL}"`, `"${s.PROGRAM}"`, `"${s.FAKULTI}"`, 
+      this.level === 'degree' ? s.MUET : s.CEFRSAH, s.assignedCourse, s.intake === 2 ? "Intake 2" : "Intake 1"
+    ]);
+    
+    let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `UniSZA_${this.selectedLecturer || this.level}_Roster.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+   }
+  }
+ }
+ </script>
 </body>
 </html>
